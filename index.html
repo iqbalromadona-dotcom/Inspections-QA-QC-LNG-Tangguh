@@ -95,7 +95,7 @@
     .sidebar-brand h2 { font-size: 0.98rem; font-weight: 800; letter-spacing: 0.2px; }
     .sidebar-brand span { font-size: 0.72rem; color: var(--slate-400); display: block; margin-top: 2px; }
 
-    /* Building Switcher at Top of Sidebar */
+    /* Building Switcher */
     .bldg-box {
       padding: 14px 16px;
       background: rgba(255,255,255,0.04);
@@ -270,6 +270,7 @@
       padding: 9px 10px; border-bottom: 2px solid var(--border); white-space: nowrap;
     }
     td { padding: 9px 10px; border-bottom: 1px solid var(--slate-200); vertical-align: middle; }
+    tfoot td { background: var(--slate-100); font-weight: 800; border-top: 2px solid var(--border); }
     tr:hover td { background: var(--slate-50); }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
@@ -358,27 +359,66 @@
     }
     .modal-backdrop.show { display: flex; }
     .modal {
-      background: #fff; border-radius: 12px; max-width: 620px; width: 100%;
+      background: #fff; border-radius: 12px; max-width: 660px; width: 100%;
       max-height: 92vh; overflow-y: auto; padding: 20px; box-shadow: 0 25px 40px rgba(0,0,0,0.3);
     }
     .modal-title { font-size: 1.05rem; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
     .modal-desc { font-size: 0.8rem; color: var(--slate-500); margin-bottom: 14px; }
     .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
-    /* ================= PRINT A4 BOQ REPORT ================= */
+    /* Dynamic Week Inputs Grid inside BOQ Modal */
+    .week-plan-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+      gap: 6px;
+      background: var(--slate-50);
+      border: 1px solid var(--border);
+      padding: 8px;
+      border-radius: 8px;
+    }
+    .week-plan-cell label {
+      display: block; font-size: 0.68rem; font-weight: 700; color: var(--slate-600); text-align: center; margin-bottom: 2px;
+    }
+    .week-plan-cell input {
+      padding: 5px 6px; font-size: 0.8rem; text-align: center;
+    }
+
+    /* ================= REPORT PREVIEW & PRINT A4 BOQ REPORT ================= */
+    .p-head { border-bottom: 2.5px solid #0f172a; padding-bottom: 10px; margin-bottom: 14px; }
+    .p-head h2 { font-size: 13pt; color: #0f172a; margin-bottom: 4px; }
+    .p-head p { font-size: 8.5pt; color: #334155; }
+    .p-sec-title { font-size: 9.5pt; font-weight: 800; color: #0f172a; margin: 14px 0 6px; }
+    .p-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 8pt; }
+    .p-table th, .p-table td { border: 1px solid #94a3b8; padding: 5px 6px; vertical-align: middle; }
+    .p-table th {
+      background: #0f172a !important; color: #fff !important; font-weight: 700;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .p-table tfoot td {
+      background: #f1f5f9 !important; font-weight: 800;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .p-sign-table {
+      width: 100%; border-collapse: collapse; margin-top: 26px;
+      page-break-inside: avoid; break-inside: avoid;
+    }
+    .p-sign-table td {
+      width: 50%; text-align: center; vertical-align: top;
+      border: none !important; padding: 8px 20px; font-size: 9.5pt; color: #0f172a;
+    }
+    .p-sign-space { height: 72px; }
+    .p-sign-line {
+      display: inline-block; width: 220px; border-bottom: 1.5px solid #0f172a; margin-bottom: 5px;
+    }
+
     #printOnlyArea { display: none; }
+    @page { size: A4 landscape; margin: 10mm 12mm; }
     @media print {
-      body { background: #fff; }
+      body { background: #fff !important; }
       #loginScreen, #appShell, .modal-backdrop { display: none !important; }
-      #printOnlyArea { display: block !important; padding: 12px; }
-      .p-head { border-bottom: 2.5px solid #0f172a; padding-bottom: 10px; margin-bottom: 14px; }
-      .p-head h2 { font-size: 15pt; color: #0f172a; }
-      .p-head p { font-size: 9pt; color: #334155; }
-      .p-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 8.5pt; }
-      .p-table th, .p-table td { border: 1px solid #94a3b8; padding: 6px 7px; }
-      .p-table th { background: #0f172a !important; color: #fff !important; -webkit-print-color-adjust: exact; }
-      .p-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 28px; text-align: center; font-size: 9.5pt; }
-      .p-sign-box { height: 65px; }
+      #printOnlyArea { display: block !important; width: 100%; }
+      .p-table thead { display: table-header-group; }
+      .p-table tr { page-break-inside: avoid; break-inside: avoid; }
     }
   </style>
 </head>
@@ -436,7 +476,7 @@
         </div>
 
         <!-- NAVIGASI TERSTRUKTUR -->
-        <div class="nav-section-title">Menu Utama</div>
+        <div class="nav-section-title" id="navSectionLabel">Menu Utama</div>
         <nav class="side-nav" id="sideNavMenu"></nav>
 
         <!-- USER PROFILE & LOGOUT -->
@@ -469,16 +509,16 @@
 
         <div class="content-pad">
 
-          <!-- ==================== MENU 1: DASHBOARD & KURVA S ==================== -->
+          <!-- ==================== MENU 1: DASHBOARD & KURVA S (KHUSUS PM / SE) ==================== -->
           <section id="secDashboard">
             <div class="kpi-grid-6" id="kpiGrid6"></div>
 
-            <!-- KURVA S -->
+            <!-- KURVA S DINAMIS -->
             <div class="card">
               <div class="card-header">
                 <div>
-                  <div class="card-title">Kurva S Progres Fabrikasi (4 Minggu)</div>
-                  <div class="card-sub">Kumulatif Rencana (Plan) vs Aktual Lolos QA/QC</div>
+                  <div class="card-title" id="scurveCardTitle">Kurva S Progres Fabrikasi (4 Minggu)</div>
+                  <div class="card-sub">Kumulatif Rencana (Plan) vs Aktual Lolos QA/QC — Otomatis menyesuaikan pengaturan durasi minggu</div>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                   <span id="scurveStatusBadge" class="pill pill-green">ON TRACK</span>
@@ -497,25 +537,17 @@
               <div id="scurveSvgWrap" style="overflow-x:auto;"></div>
               <div class="table-wrap" style="margin-top:10px;">
                 <table>
-                  <thead>
-                    <tr>
-                      <th>Parameter Kumulatif</th>
-                      <th class="text-center">Minggu 1 (W1)</th>
-                      <th class="text-center">Minggu 2 (W2)</th>
-                      <th class="text-center">Minggu 3 (W3)</th>
-                      <th class="text-center">Minggu 4 (W4)</th>
-                    </tr>
-                  </thead>
+                  <thead id="scurveTableHead"></thead>
                   <tbody id="scurveTableBody"></tbody>
                 </table>
               </div>
             </div>
 
-            <!-- TABEL REKAP BOQ -->
+            <!-- TABEL REKAP BOQ & BERAT -->
             <div class="card">
               <div class="card-header">
                 <div>
-                  <div class="card-title">Rekapitulasi Item BOQ, Status QA/QC &amp; Penerimaan Papua</div>
+                  <div class="card-title">Rekapitulasi Item BOQ, Berat Material, Status QA/QC &amp; Penerimaan Papua</div>
                   <div class="card-sub">Batang progres: Hijau Tua = Approved Jakarta | Hijau Muda = Menunggu Approval | Merah = Rework</div>
                 </div>
               </div>
@@ -527,7 +559,9 @@
                       <th>Kode Item</th>
                       <th>Deskripsi Item</th>
                       <th>Warna</th>
+                      <th class="text-right">Berat Satuan</th>
                       <th class="text-right">Target BOQ</th>
+                      <th class="text-right">Total Berat BOQ</th>
                       <th class="text-right">Lolos QC</th>
                       <th class="text-right">Approved</th>
                       <th class="text-right">Rework</th>
@@ -537,20 +571,76 @@
                     </tr>
                   </thead>
                   <tbody id="dashBoqBody"></tbody>
+                  <tfoot id="dashBoqFoot"></tfoot>
                 </table>
               </div>
             </div>
           </section>
 
-          <!-- ==================== MENU 2: DOCUMENT CONTROL ==================== -->
+          <!-- ==================== MENU 2: KELOLA MASTER BOQ & DOCUMENT CONTROL (KHUSUS PM / SE) ==================== -->
           <section id="secDocControl" style="display:none;">
+            <!-- PENGATURAN DURASI MINGGU DINAMIS -->
+            <div class="card" style="border-left: 4px solid var(--blue);">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Pengaturan Durasi Proyek (Jumlah Minggu Dinamis)</div>
+                  <div class="card-sub">Ubah jumlah minggu kapan saja (misal 4, 6, 8, atau 12 Minggu). Otomatis memperbarui Plan Mingguan, Kurva S, dan Form Input QC Jakarta.</div>
+                </div>
+                <span class="pill pill-blue" id="activeWeeksBadge" style="font-size:0.8rem; padding:4px 10px;">Durasi Aktif: 4 Minggu</span>
+              </div>
+              <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <button type="button" class="btn btn-light btn-sm" onclick="setQuickWeeks(4)">4 Minggu</button>
+                  <button type="button" class="btn btn-light btn-sm" onclick="setQuickWeeks(6)">6 Minggu</button>
+                  <button type="button" class="btn btn-light btn-sm" onclick="setQuickWeeks(8)">8 Minggu</button>
+                  <button type="button" class="btn btn-light btn-sm" onclick="setQuickWeeks(12)">12 Minggu</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <label for="inpTotalWeeks" style="font-size:0.8rem; font-weight:700; color:var(--slate-700);">Custom Minggu:</label>
+                  <input type="number" id="inpTotalWeeks" class="form-control" style="width:85px; padding:6px 8px;" min="1" max="52" value="4" />
+                  <button type="button" class="btn btn-primary btn-sm" id="btnSaveWeeks" onclick="saveProjectWeeks()">Simpan Durasi &amp; Sinkronkan</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- TABEL KELOLA ITEM BOQ (TAMBAH, EDIT, HAPUS, BERAT, WARNA) -->
             <div class="card">
               <div class="card-header">
                 <div>
-                  <div class="card-title">Document Control — Standar Gambar Kerja &amp; Target BOQ per Kode</div>
-                  <div class="card-sub">Gambar &amp; catatan standar di sini otomatis tampil di layar HP teknisi saat memilih kode item</div>
+                  <div class="card-title">Daftar Item Material BOQ (Per Bangunan Office / Workshop)</div>
+                  <div class="card-sub">Kelola item material, berat satuan (kg), kode warna fleksibel, dan target mingguan</div>
                 </div>
-                <button class="btn btn-primary btn-sm" id="btnAddBoqDoc" onclick="openBoqModal(null)">+ Tambah / Atur Item BOQ &amp; Gambar</button>
+                <button class="btn btn-primary" id="btnAddBoqDoc" onclick="openBoqModal(null)">+ Tambah Item Material</button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th class="text-center" style="width:40px;">No</th>
+                      <th>Bangunan</th>
+                      <th>Kode Item</th>
+                      <th>Deskripsi Item &amp; Section</th>
+                      <th>Kode Warna</th>
+                      <th class="text-right">Berat Satuan</th>
+                      <th class="text-right">Target BOQ</th>
+                      <th class="text-right">Total Berat BOQ</th>
+                      <th>Rencana Mingguan</th>
+                      <th class="text-center" style="width:130px;">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="boqManageTableBody"></tbody>
+                  <tfoot id="boqManageTableFoot"></tfoot>
+                </table>
+              </div>
+            </div>
+
+            <!-- KATALOG GAMBAR STANDAR DOCUMENT CONTROL -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Referensi Gambar Kerja &amp; Catatan Standar (Document Control)</div>
+                  <div class="card-sub">Gambar &amp; catatan standar otomatis tampil pada layar teknisi saat memilih kode item di form inspeksi</div>
+                </div>
               </div>
               <div class="grid-3" id="docControlCards"></div>
             </div>
@@ -589,12 +679,7 @@
                   </div>
                   <div class="form-group">
                     <label class="form-label">Periode Minggu</label>
-                    <select id="fInspMinggu" class="form-control">
-                      <option value="W1">Minggu 1 (W1)</option>
-                      <option value="W2">Minggu 2 (W2)</option>
-                      <option value="W3">Minggu 3 (W3)</option>
-                      <option value="W4">Minggu 4 (W4)</option>
-                    </select>
+                    <select id="fInspMinggu" class="form-control"></select>
                   </div>
                 </div>
 
@@ -693,8 +778,8 @@
             <div class="card">
               <div class="card-header">
                 <div>
-                  <div class="card-title">Log Inspeksi Harian &amp; Approval Atasan (Jakarta)</div>
-                  <div class="card-sub">Klik tombol Approve / Rework untuk memvalidasi bundel sebelum dikirim ke Papua</div>
+                  <div class="card-title" id="logCardTitle">Log Inspeksi Harian &amp; Approval Atasan (Jakarta)</div>
+                  <div class="card-sub" id="logCardSub">Klik tombol Approve / Rework untuk memvalidasi bundel sebelum dikirim ke Papua</div>
                 </div>
                 <select id="filterLogApproval" class="form-control" style="width:auto; padding:5px 10px; font-size:0.78rem;" onchange="renderInspectionTables()">
                   <option value="ALL">Semua Status Approval</option>
@@ -705,17 +790,7 @@
               </div>
               <div class="table-wrap">
                 <table>
-                  <thead>
-                    <tr>
-                      <th>Tag Bundel &amp; Minggu</th>
-                      <th>Bangunan &amp; Kode Item</th>
-                      <th>Unit &amp; Qty</th>
-                      <th>Catatan &amp; Petugas</th>
-                      <th class="text-center">Dokumentasi Foto</th>
-                      <th>Status Approval</th>
-                      <th class="text-center">Aksi Atasan</th>
-                    </tr>
-                  </thead>
+                  <thead id="logJakartaHead"></thead>
                   <tbody id="logJakartaBody"></tbody>
                 </table>
               </div>
@@ -724,7 +799,8 @@
 
           <!-- ==================== MENU 4: TRACKING SHIPPING & QC INCOMING PAPUA ==================== -->
           <section id="secPapua" style="display:none;">
-            <div class="grid-3" style="margin-bottom:14px;">
+            <!-- KPI Pengiriman hanya tampil untuk PM & Site Engineer -->
+            <div class="grid-3" id="papuaKpiGrid" style="margin-bottom:14px;">
               <div class="kpi-card green">
                 <div class="kpi-lbl">1. Siap Kirim (Approved JKT)</div>
                 <div class="kpi-val" id="cntSiapKirim">0</div>
@@ -745,10 +821,11 @@
             <div class="card">
               <div class="card-header">
                 <div>
-                  <div class="card-title">Tracking Pengiriman (Jakarta &rarr; Papua) &amp; QC Incoming Site Papua</div>
-                  <div class="card-sub">Centang bundel berstatus "Siap Kirim" untuk mencatat keberangkatan kontainer, lalu update QC Incoming saat tiba di Papua</div>
+                  <div class="card-title">Input &amp; Tracking Pengiriman Kontainer (Jakarta &rarr; Papua) &amp; QC Incoming</div>
+                  <div class="card-sub">Centang bundel "Siap Kirim" untuk input keberangkatan kontainer (otomatis menghitung total berat muatan), lalu input QC Incoming saat tiba di Papua</div>
                 </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                  <span id="selectedShipWeightBadge" class="pill pill-blue" style="display:none; font-size:0.76rem;">Terpilih: 0 Bundel (0 kg)</span>
                   <select id="filterTrackingStage" class="form-control" style="width:auto; padding:5px 10px; font-size:0.78rem;" onchange="renderPapuaTracking()">
                     <option value="ALL">Semua Tahap Pengiriman</option>
                     <option value="Siap Kirim">1. Siap Kirim (Approved JKT)</option>
@@ -765,7 +842,7 @@
                       <th style="width:32px;"><input type="checkbox" id="chkAllShip" onclick="toggleAllShipCheck(this.checked)" /></th>
                       <th>Tag Bundel</th>
                       <th>Bangunan &amp; Item</th>
-                      <th>Unit &amp; Qty</th>
+                      <th>Unit, Qty &amp; Berat</th>
                       <th>Status Tracking</th>
                       <th>Info Kontainer / Shipping</th>
                       <th>Hasil QC Incoming Papua</th>
@@ -779,17 +856,17 @@
             </div>
           </section>
 
-          <!-- ==================== MENU 5: CETAK PDF BERDASARKAN BOQ ==================== -->
+          <!-- ==================== MENU 5: CETAK PDF BERDASARKAN BOQ (KHUSUS PM / SE) ==================== -->
           <section id="secPdfBoq" style="display:none;">
             <div class="card">
               <div class="card-header">
                 <div>
                   <div class="card-title">Pratinjau Laporan Berita Acara Berdasarkan Urutan BOQ</div>
-                  <div class="card-sub">Laporan otomatis mengikuti filter area bangunan aktif di sidebar kiri</div>
+                  <div class="card-sub">Laporan otomatis mengikuti filter area bangunan aktif di sidebar kiri (format cetak A4 Landscape)</div>
                 </div>
                 <button class="btn btn-success" onclick="printBoqPdf()">Cetak / Simpan PDF (A4)</button>
               </div>
-              <div id="boqReportPreviewContainer" style="border:1px solid var(--border); border-radius:8px; padding:18px; background:#fff;"></div>
+              <div id="boqReportPreviewContainer" style="border:1px solid var(--border); border-radius:8px; padding:18px; background:#fff; overflow-x:auto;"></div>
             </div>
           </section>
 
@@ -876,6 +953,9 @@
     <div class="modal">
       <div class="modal-title">Input Keberangkatan Pengiriman (Jakarta &rarr; Papua)</div>
       <div class="modal-desc" id="shipModalDesc">-</div>
+      <div id="shipWeightSummaryBox" style="background:var(--blue-soft); border:1px solid #93c5fd; color:#1e3a8a; padding:8px 12px; border-radius:8px; font-size:0.82rem; font-weight:700; margin-bottom:12px;">
+        Total Estimasi Berat Muatan: 0 kg (0,00 Ton)
+      </div>
       <div class="grid-3">
         <div class="form-group">
           <label class="form-label">No. Kontainer / Surat Jalan</label>
@@ -951,9 +1031,9 @@
 
   <!-- ==================== MODAL: TAMBAH / EDIT BOQ & DOCUMENT CONTROL ==================== -->
   <div id="boqModal" class="modal-backdrop">
-    <div class="modal" style="max-width:650px;">
-      <div class="modal-title" id="boqModalTitle">Atur Item BOQ &amp; Standar Gambar Document Control</div>
-      <div class="modal-desc">Perubahan di sini langsung memperbarui target BOQ, Kurva S, nomor satuan (001..N), dan gambar acuan teknisi.</div>
+    <div class="modal" style="max-width:680px;">
+      <div class="modal-title" id="boqModalTitle">Tambah / Edit Item Material BOQ &amp; Document Control</div>
+      <div class="modal-desc">Perubahan otomatis tersimpan ke Google Sheets dan memperbarui Target BOQ, Total Berat, Kurva S, serta referensi teknisi.</div>
       <input type="hidden" id="bIdItem" />
       <div class="grid-3">
         <div class="form-group">
@@ -968,13 +1048,15 @@
           <input type="text" id="bKode" class="form-control" placeholder="Contoh: K1" required />
         </div>
         <div class="form-group">
-          <label class="form-label">Kode Warna Modul</label>
+          <label class="form-label">Kode Warna Modul (Opsional)</label>
           <select id="bWarna" class="form-control">
             <option value="Merah">Merah</option>
             <option value="Biru">Biru</option>
             <option value="Kuning">Kuning</option>
             <option value="Hijau">Hijau</option>
-            <option value="Putih">Putih</option>
+            <option value="Abu-abu">Abu-abu</option>
+            <option value="Oranye">Oranye</option>
+            <option value="Belum Ditentukan / Tanpa Warna">Belum Ditentukan / Tanpa Warna</option>
           </select>
         </div>
       </div>
@@ -984,7 +1066,7 @@
           <input type="text" id="bNama" class="form-control" placeholder="Kolom Utama WF 200x100" required />
         </div>
         <div class="form-group">
-          <label class="form-label">Section / Kelompok</label>
+          <label class="form-label">Section / Kelompok Pekerjaan</label>
           <input type="text" id="bSection" class="form-control" placeholder="Struktur Utama" required />
         </div>
       </div>
@@ -995,18 +1077,24 @@
         </div>
         <div class="form-group">
           <label class="form-label">Target Total BOQ</label>
-          <input type="number" id="bTarget" class="form-control" min="1" value="20" required />
+          <input type="number" id="bTarget" class="form-control" min="1" value="20" oninput="updateModalWeightPreview()" required />
         </div>
         <div class="form-group">
-          <label class="form-label">Plan Kumulatif W1 / W2 / W3 / W4</label>
-          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:4px;">
-            <input type="number" id="bW1" class="form-control" placeholder="W1" min="0" value="5" />
-            <input type="number" id="bW2" class="form-control" placeholder="W2" min="0" value="10" />
-            <input type="number" id="bW3" class="form-control" placeholder="W3" min="0" value="15" />
-            <input type="number" id="bW4" class="form-control" placeholder="W4" min="0" value="20" />
-          </div>
+          <label class="form-label">Berat Satuan (kg) <span style="font-weight:400; color:var(--slate-500);">(Opsional / 0)</span></label>
+          <input type="number" id="bBerat" class="form-control" min="0" step="0.01" value="0" oninput="updateModalWeightPreview()" />
+          <div id="bTotalWeightHint" style="font-size:0.71rem; color:var(--blue-dark); font-weight:700; margin-top:2px;">Total Berat BOQ: 0 kg (0,00 Ton)</div>
         </div>
       </div>
+
+      <!-- PLAN KUMULATIF DINAMIS SESUAI TOTAL MINGGU -->
+      <div class="form-group">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <label class="form-label" style="margin-bottom:0;" id="bPlanLabel">Rencana Kumulatif per Minggu (W1 s/d W4)</label>
+          <button type="button" class="btn btn-light btn-sm" onclick="autoDistributePlan()">Isi Otomatis Merata ke Target</button>
+        </div>
+        <div class="week-plan-grid" id="bWeekPlanInputs"></div>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Catatan Standar Teknis (Tampil ke Teknisi Saat Input)</label>
         <textarea id="bCatatan" class="form-control" rows="2" placeholder="Spesifikasi ukuran, mal lubang baut, dan aturan bundling..."></textarea>
@@ -1056,12 +1144,13 @@
 
   <script>
     // =========================================================================
-    // KONFIGURASI URL GOOGLE APPS SCRIPT (Tempel URL /exec Anda di sini)
+    // KONFIGURASI URL GOOGLE APPS SCRIPT
     // =========================================================================
     const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbxyAcsM0LYV6sou5e5crw7Fv5oHBLkNu1fhBGCOomgHLu8bxvWM3BHnk5hsOCFmQILX/exec";
 
     let apiUrl = localStorage.getItem("tangguh_v2_api_url") || DEFAULT_API_URL;
     let currentUser = JSON.parse(localStorage.getItem("tangguh_v2_user")) || null;
+    let totalWeeks = parseInt(localStorage.getItem("tangguh_v2_weeks"), 10) || 4;
     let activeBuilding = "Office"; // 'Office' | 'Workshop' | 'Gabungan'
     let activeMenu = "dashboard"; // 'dashboard' | 'doc' | 'inspection' | 'papua' | 'pdf'
     let curveMode = "pct";
@@ -1076,27 +1165,38 @@
     let activeStream = null;
     let selectedShipIds = new Set();
 
-    // Default Master Users (Fallback sebelum tersinkron ke Google Sheets)
+    // Peta Kode Warna Fleksibel
+    const COLOR_MAP = {
+      "Merah": "#dc2626",
+      "Biru": "#2563eb",
+      "Kuning": "#eab308",
+      "Hijau": "#16a34a",
+      "Abu-abu": "#64748b",
+      "Oranye": "#f97316",
+      "Belum Ditentukan / Tanpa Warna": "#cbd5e1"
+    };
+
+    // Default Master Users
     let masterUsers = [
-      { userId: "USR-01", username: "pm_tangguh", sandi: "PM2026#", nama: "Project Manager", role: "PM", aksesBangunan: "Semua", bisaInput: false, bisaApprove: true, kelolaDocBoq: false },
+      { userId: "USR-01", username: "pm_tangguh", sandi: "PM2026#", nama: "Project Manager", role: "PM", aksesBangunan: "Semua", bisaInput: false, bisaApprove: true, kelolaDocBoq: true },
       { userId: "USR-02", username: "se_iqbal", sandi: "SE2026#", nama: "Iqbal Romadona (Site Eng)", role: "Site_Engineer", aksesBangunan: "Semua", bisaInput: true, bisaApprove: true, kelolaDocBoq: true },
       { userId: "USR-03", username: "teknisi1", sandi: "TEK101", nama: "Teknisi 1 (Fabrikasi)", role: "Teknisi", aksesBangunan: "Office, Workshop", bisaInput: true, bisaApprove: false, kelolaDocBoq: false },
       { userId: "USR-04", username: "teknisi2", sandi: "TEK202", nama: "Teknisi 2 (Fabrikasi)", role: "Teknisi", aksesBangunan: "Office, Workshop", bisaInput: true, bisaApprove: false, kelolaDocBoq: false },
       { userId: "USR-05", username: "teknisi3", sandi: "TEK303", nama: "Teknisi 3 (Kitting & Label)", role: "Teknisi", aksesBangunan: "Office, Workshop", bisaInput: true, bisaApprove: false, kelolaDocBoq: false }
     ];
 
-    // Default BOQ & Document Control
+    // Default BOQ & Document Control (dengan Berat Satuan kg & Plans Array)
     const defaultBoqItems = [
-      { idItem: "BOQ-OFC-01", bangunan: "Office", kodeItem: "UMP-A1", namaItem: "Umpak & Angkur Tipe A1", section: "Struktur Bawah", warna: "Merah", satuan: "Set", target: 20, planW1: 10, planW2: 18, planW3: 20, planW4: 20, gambarUrl: "", catatanStandar: "Cek jarak as baut angkur M20 dengan mal base plate, mur & ring diikat 1 paket." },
-      { idItem: "BOQ-OFC-02", bangunan: "Office", kodeItem: "K1", namaItem: "Kolom Utama WF 200x100", section: "Struktur Utama", warna: "Biru", satuan: "Batang", target: 36, planW1: 6, planW2: 18, planW3: 30, planW4: 36, gambarUrl: "", catatanStandar: "Pastikan panjang potong presisi, pelat sambung end-plate rata, hard stamp K1 & cat ujung Biru." },
-      { idItem: "BOQ-OFC-03", bangunan: "Office", kodeItem: "B1", namaItem: "Balok Rafter & Tie Beam", section: "Struktur Utama", warna: "Biru", satuan: "Batang", target: 48, planW1: 4, planW2: 20, planW3: 38, planW4: 48, gambarUrl: "", catatanStandar: "Cek diameter lubang baut M16 sesuai mal, bersihkan slag las pada gusset plate." },
-      { idItem: "BOQ-OFC-04", bangunan: "Office", kodeItem: "ATP-01", namaItem: "Gording Atap Kanal C150", section: "Rangka Atap", warna: "Kuning", satuan: "Batang", target: 120, planW1: 0, planW2: 30, planW3: 85, planW4: 120, gambarUrl: "", catatanStandar: "Ikat per bundel maksimal 10 batang dengan strapping band, beri tanda arah TOP & cat Kuning." },
-      { idItem: "BOQ-OFC-05", bangunan: "Office", kodeItem: "MEP-01", namaItem: "Bracket & Support Tray MEP", section: "MEP & Aksesoris", warna: "Hijau", satuan: "Set", target: 40, planW1: 0, planW2: 12, planW3: 28, planW4: 40, gambarUrl: "", catatanStandar: "Cek lubang mounting dynabolt/baut, finishing cat anti karat & label hijau." },
-      { idItem: "BOQ-WKS-01", bangunan: "Workshop", kodeItem: "UMP-W1", namaItem: "Pedestal & Angkur Berat W1", section: "Struktur Bawah", warna: "Merah", satuan: "Set", target: 24, planW1: 12, planW2: 24, planW3: 24, planW4: 24, gambarUrl: "", catatanStandar: "Angkur M24 L-bolt lengkap dengan template mal & mur ganda." },
-      { idItem: "BOQ-WKS-02", bangunan: "Workshop", kodeItem: "KW1", namaItem: "Kolom Workshop WF 250x125", section: "Struktur Utama", warna: "Biru", satuan: "Batang", target: 24, planW1: 4, planW2: 14, planW3: 20, planW4: 24, gambarUrl: "", catatanStandar: "Cek kelurusan kolom, bracket dudukan hoist/pipa terlas penuh, hard stamp KW1." },
-      { idItem: "BOQ-WKS-03", bangunan: "Workshop", kodeItem: "BW1", namaItem: "Kuda-Kuda Bentang Lebar", section: "Struktur Utama", warna: "Biru", satuan: "Set", target: 32, planW1: 0, planW2: 12, planW3: 24, planW4: 32, gambarUrl: "", catatanStandar: "Trial assembly sambungan tengah di workshop sebelum dipacking, tandai kode kiri/kanan." },
-      { idItem: "BOQ-WKS-04", bangunan: "Workshop", kodeItem: "GRD-W1", namaItem: "Gording & Bracing Ikatan Angin", section: "Rangka Atap", warna: "Kuning", satuan: "Batang", target: 380, planW1: 30, planW2: 140, planW3: 280, planW4: 380, gambarUrl: "", catatanStandar: "Kitting per bundel @10 batang + turnbuckle & baut bracing dalam karung berlabel." },
-      { idItem: "BOQ-WKS-05", bangunan: "Workshop", kodeItem: "PNL-01", namaItem: "Frame Panel Listrik & Exhaust", section: "MEP & Aksesoris", warna: "Hijau", satuan: "Unit", target: 18, planW1: 0, planW2: 6, planW3: 14, planW4: 18, gambarUrl: "", catatanStandar: "Cek dimensi bukaan louver & dudukan panel distribusi, cat hijau & bungkus wrapping." }
+      { idItem: "BOQ-OFC-01", bangunan: "Office", kodeItem: "UMP-A1", namaItem: "Umpak & Angkur Tipe A1", section: "Struktur Bawah", warna: "Merah", satuan: "Set", target: 20, beratSatuan: 25, plans: [10, 18, 20, 20], gambarUrl: "", catatanStandar: "Cek jarak as baut angkur M20 dengan mal base plate, mur & ring diikat 1 paket." },
+      { idItem: "BOQ-OFC-02", bangunan: "Office", kodeItem: "K1", namaItem: "Kolom Utama WF 200x100", section: "Struktur Utama", warna: "Biru", satuan: "Batang", target: 36, beratSatuan: 128, plans: [6, 18, 30, 36], gambarUrl: "", catatanStandar: "Pastikan panjang potong presisi, pelat sambung end-plate rata, hard stamp K1 & cat ujung Biru." },
+      { idItem: "BOQ-OFC-03", bangunan: "Office", kodeItem: "B1", namaItem: "Balok Rafter & Tie Beam", section: "Struktur Utama", warna: "Biru", satuan: "Batang", target: 48, beratSatuan: 95, plans: [4, 20, 38, 48], gambarUrl: "", catatanStandar: "Cek diameter lubang baut M16 sesuai mal, bersihkan slag las pada gusset plate." },
+      { idItem: "BOQ-OFC-04", bangunan: "Office", kodeItem: "ATP-01", namaItem: "Gording Atap Kanal C150", section: "Rangka Atap", warna: "Kuning", satuan: "Batang", target: 120, beratSatuan: 32, plans: [0, 30, 85, 120], gambarUrl: "", catatanStandar: "Ikat per bundel maksimal 10 batang dengan strapping band, beri tanda arah TOP & cat Kuning." },
+      { idItem: "BOQ-OFC-05", bangunan: "Office", kodeItem: "MEP-01", namaItem: "Bracket & Support Tray MEP", section: "MEP & Aksesoris", warna: "Hijau", satuan: "Set", target: 40, beratSatuan: 8, plans: [0, 12, 28, 40], gambarUrl: "", catatanStandar: "Cek lubang mounting dynabolt/baut, finishing cat anti karat & label hijau." },
+      { idItem: "BOQ-WKS-01", bangunan: "Workshop", kodeItem: "UMP-W1", namaItem: "Pedestal & Angkur Berat W1", section: "Struktur Bawah", warna: "Merah", satuan: "Set", target: 24, beratSatuan: 38, plans: [12, 24, 24, 24], gambarUrl: "", catatanStandar: "Angkur M24 L-bolt lengkap dengan template mal & mur ganda." },
+      { idItem: "BOQ-WKS-02", bangunan: "Workshop", kodeItem: "KW1", namaItem: "Kolom Workshop WF 250x125", section: "Struktur Utama", warna: "Biru", satuan: "Batang", target: 24, beratSatuan: 178, plans: [4, 14, 20, 24], gambarUrl: "", catatanStandar: "Cek kelurusan kolom, bracket dudukan hoist/pipa terlas penuh, hard stamp KW1." },
+      { idItem: "BOQ-WKS-03", bangunan: "Workshop", kodeItem: "BW1", namaItem: "Kuda-Kuda Bentang Lebar", section: "Struktur Utama", warna: "Biru", satuan: "Set", target: 32, beratSatuan: 210, plans: [0, 12, 24, 32], gambarUrl: "", catatanStandar: "Trial assembly sambungan tengah di workshop sebelum dipacking, tandai kode kiri/kanan." },
+      { idItem: "BOQ-WKS-04", bangunan: "Workshop", kodeItem: "GRD-W1", namaItem: "Gording & Bracing Ikatan Angin", section: "Rangka Atap", warna: "Kuning", satuan: "Batang", target: 380, beratSatuan: 34, plans: [30, 140, 280, 380], gambarUrl: "", catatanStandar: "Kitting per bundel @10 batang + turnbuckle & baut bracing dalam karung berlabel." },
+      { idItem: "BOQ-WKS-05", bangunan: "Workshop", kodeItem: "PNL-01", namaItem: "Frame Panel Listrik & Exhaust", section: "MEP & Aksesoris", warna: "Hijau", satuan: "Unit", target: 18, beratSatuan: 15, plans: [0, 6, 14, 18], gambarUrl: "", catatanStandar: "Cek dimensi bukaan louver & dudukan panel distribusi, cat hijau & bungkus wrapping." }
     ];
 
     const defaultLogs = [
@@ -1145,9 +1245,68 @@
     let boqItems = JSON.parse(localStorage.getItem("tangguh_v2_boq")) || defaultBoqItems;
     let logs = JSON.parse(localStorage.getItem("tangguh_v2_logs")) || defaultLogs;
 
+    // Helper: Cek apakah user adalah Manager (Project Manager atau Site Engineer)
+    function isManagerRole() {
+      return currentUser && (currentUser.role === "PM" || currentUser.role === "Site_Engineer");
+    }
+
+    // Helper: Ambil array rencana mingguan terstandar sesuai totalWeeks
+    function getItemPlans(item) {
+      let arr = [];
+      if (Array.isArray(item.plans) && item.plans.length > 0) {
+        arr = item.plans.map(n => Number(n) || 0);
+      } else {
+        arr = [
+          Number(item.planW1) || 0,
+          Number(item.planW2) || 0,
+          Number(item.planW3) || 0,
+          Number(item.planW4) || 0
+        ];
+      }
+      const target = Number(item.target) || 0;
+      while (arr.length < totalWeeks) {
+        arr.push(target);
+      }
+      return arr.slice(0, totalWeeks);
+    }
+
+    // Helper: Format Berat kg & Ton
+    function formatWeightHtml(totalKg, isZeroLabel) {
+      const kg = Number(totalKg) || 0;
+      if (kg <= 0) {
+        return `<span style="color:var(--slate-400);">${isZeroLabel || "0 kg"}</span>`;
+      }
+      const ton = (kg / 1000).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const kgStr = kg.toLocaleString("id-ID", { maximumFractionDigits: 1 });
+      return `<strong>${kgStr} kg</strong> <span style="font-size:0.72rem; color:var(--slate-500);">(${ton} Ton)</span>`;
+    }
+
+    function formatWeightPlain(totalKg) {
+      const kg = Number(totalKg) || 0;
+      if (kg <= 0) return "0 kg";
+      const ton = (kg / 1000).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return `${kg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} kg (${ton} Ton)`;
+    }
+
+    // Helper: Badge Warna Fleksibel
+    function renderColorBadge(warna) {
+      const w = warna || "Belum Ditentukan / Tanpa Warna";
+      if (w === "Belum Ditentukan / Tanpa Warna") {
+        return `<span style="display:inline-flex; align-items:center; gap:5px; font-size:0.73rem; color:var(--slate-500); font-style:italic;">
+          <span style="width:10px; height:10px; border-radius:2px; border:1.5px dashed #94a3b8; display:inline-block;"></span>Tanpa Warna
+        </span>`;
+      }
+      const hex = COLOR_MAP[w] || "#64748b";
+      return `<span style="display:inline-flex; align-items:center; gap:5px; font-weight:600;">
+        <span style="width:10px; height:10px; border-radius:2px; background:${hex}; display:inline-block;"></span>${w}
+      </span>`;
+    }
+
     // SVG Schematic Generator for Default Reference Drawings
     function getDefaultSchematicSvg(kode, warna) {
-      const colorHex = { "Merah": "#dc2626", "Biru": "#2563eb", "Kuning": "#eab308", "Hijau": "#16a34a", "Putih": "#64748b" }[warna] || "#2563eb";
+      const isNoColor = !warna || warna === "Belum Ditentukan / Tanpa Warna";
+      const colorHex = isNoColor ? "#475569" : (COLOR_MAP[warna] || "#2563eb");
+      const labelWarna = isNoColor ? "WARNA: BELUM DITENTUKAN" : `WARNA ${warna.toUpperCase()}`;
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
         <rect width="320" height="180" fill="#f8fafc"/>
         <rect x="8" y="8" width="304" height="164" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
@@ -1158,7 +1317,7 @@
         <circle cx="138" cy="130" r="4" fill="#0f172a"/><circle cx="182" cy="130" r="4" fill="#0f172a"/>
         <rect x="14" y="14" width="96" height="22" rx="4" fill="${colorHex}"/>
         <text x="62" y="29" text-anchor="middle" font-family="Arial" font-size="11" font-weight="bold" fill="#fff">KODE: ${kode}</text>
-        <text x="160" y="164" text-anchor="middle" font-family="Arial" font-size="10" fill="#475569">STANDAR SHOP DRAWING • WARNA ${warna.toUpperCase()}</text>
+        <text x="160" y="164" text-anchor="middle" font-family="Arial" font-size="9.5" fill="#475569">STANDAR SHOP DRAWING • ${labelWarna}</text>
       </svg>`;
       return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
     }
@@ -1214,17 +1373,29 @@
       document.getElementById("appShell").style.display = "block";
 
       document.getElementById("sbUserName").textContent = currentUser.nama;
-      const roleLabels = { "PM": "Project Manager (Approval)", "Site_Engineer": "Site Engineer (Full Access)", "Teknisi": "Teknisi Lapangan" };
+      const roleLabels = {
+        "PM": "Project Manager (Full Control)",
+        "Site_Engineer": "Site Engineer (Full Control)",
+        "Teknisi": "Teknisi Lapangan (Mode Input)"
+      };
       document.getElementById("sbUserRole").textContent = roleLabels[currentUser.role] || currentUser.role;
 
-      // Reset building selection safely based on permissions
-      if (currentUser.role === "Teknisi" && activeBuilding === "Gabungan") {
+      // Sembunyikan tombol Database dari akun Teknisi agar fokus input saja
+      document.getElementById("btnTopDb").style.display = isManagerRole() ? "inline-flex" : "none";
+
+      if (!isManagerRole() && activeBuilding === "Gabungan") {
         activeBuilding = "Office";
       }
 
       renderBuildingSwitcher();
       renderSidebarNav();
-      switchMenu("dashboard");
+
+      // Teknisi langsung diarahkan ke menu Input Inspeksi QA/QC (tidak perlu melihat Dashboard Kurva S)
+      if (!isManagerRole()) {
+        switchMenu("inspection");
+      } else {
+        switchMenu("dashboard");
+      }
     }
 
     function updateConnIndicators() {
@@ -1243,12 +1414,11 @@
 
     // ==================== BUILDING SWITCHER & NAVIGATION ====================
     function renderBuildingSwitcher() {
-      const canAll = currentUser.role === "PM" || currentUser.role === "Site_Engineer";
       const options = [
         { id: "Office", label: "Bangunan Office", tag: "OFC" },
         { id: "Workshop", label: "Bangunan Workshop", tag: "WKS" }
       ];
-      if (canAll) {
+      if (isManagerRole()) {
         options.push({ id: "Gabungan", label: "Gabungan (Semua)", tag: "ALL" });
       }
 
@@ -1271,20 +1441,37 @@
       const pendingApp = scopedLogs.filter(l => l.statusApproval === "Menunggu Approval").length;
       const reworkCnt = scopedLogs.filter(l => l.statusApproval === "Rework").length;
 
-      const items = [
-        { id: "dashboard", label: "1. Dashboard & Kurva S", badge: "" },
-        { id: "doc", label: "2. Document Control", badge: "" },
-        {
-          id: "inspection",
-          label: currentUser.role === "PM" ? "3. Approval Jakarta" : "3. Input & Approval JKT",
-          badge: (pendingApp + reworkCnt) > 0 ? `${pendingApp + reworkCnt}` : "",
-          badgeCls: reworkCnt > 0 ? "" : "amber"
-        },
-        { id: "papua", label: "4. Shipping & QC Papua", badge: "" }
-      ];
-
-      if (currentUser.role === "PM" || currentUser.role === "Site_Engineer") {
-        items.push({ id: "pdf", label: "5. Cetak PDF Berbasis BOQ", badge: "" });
+      let items = [];
+      if (isManagerRole()) {
+        document.getElementById("navSectionLabel").textContent = "Menu Manajemen & Kontrol";
+        items = [
+          { id: "dashboard", label: "1. Dashboard & Kurva S", badge: "" },
+          { id: "doc", label: "2. Kelola BOQ & Doc Control", badge: "" },
+          {
+            id: "inspection",
+            label: currentUser.role === "PM" ? "3. Approval Jakarta" : "3. Input & Approval JKT",
+            badge: (pendingApp + reworkCnt) > 0 ? `${pendingApp + reworkCnt}` : "",
+            badgeCls: reworkCnt > 0 ? "" : "amber"
+          },
+          { id: "papua", label: "4. Shipping & QC Papua", badge: "" },
+          { id: "pdf", label: "5. Cetak PDF Berbasis BOQ", badge: "" }
+        ];
+      } else {
+        // Akun Teknisi: Disederhanakan khusus untuk tugas input lapangan saja
+        document.getElementById("navSectionLabel").textContent = "Menu Input Lapangan";
+        items = [
+          {
+            id: "inspection",
+            label: "1. Input Inspeksi QA/QC",
+            badge: reworkCnt > 0 ? `${reworkCnt} NG` : "",
+            badgeCls: ""
+          },
+          {
+            id: "papua",
+            label: "2. Input Shipping & QC Papua",
+            badge: ""
+          }
+        ];
       }
 
       document.getElementById("sideNavMenu").innerHTML = items.map(it => `
@@ -1296,6 +1483,10 @@
     }
 
     function switchMenu(menuId) {
+      // Proteksi: Teknisi tidak bisa membuka menu manajemen
+      if (!isManagerRole() && (menuId === "dashboard" || menuId === "doc" || menuId === "pdf")) {
+        menuId = "inspection";
+      }
       activeMenu = menuId;
       toggleSidebar(false);
       renderSidebarNav();
@@ -1313,12 +1504,16 @@
 
       const titles = {
         dashboard: "Dashboard Monitoring & Kurva S",
-        doc: "Document Control — Referensi Gambar & Target BOQ",
-        inspection: currentUser.role === "PM" ? "Verifikasi & Approval Fabrikasi Jakarta" : "Input Inspeksi QA/QC & Approval Jakarta",
-        papua: "Tracking Pengiriman (Shipping) & QC Incoming Papua",
+        doc: "Kelola Master BOQ, Berat, Durasi Minggu & Document Control",
+        inspection: currentUser.role === "PM"
+          ? "Verifikasi & Approval Fabrikasi Jakarta"
+          : (isManagerRole() ? "Input Inspeksi QA/QC & Approval Jakarta" : "Input Inspeksi QA/QC & Perbaikan Rework"),
+        papua: isManagerRole()
+          ? "Tracking Pengiriman (Shipping) & QC Incoming Papua"
+          : "Input Keberangkatan Kontainer & QC Incoming Papua",
         pdf: "Cetak Laporan Berita Acara Berdasarkan BOQ"
       };
-      document.getElementById("topPageTitle").textContent = titles[menuId] || "Dashboard";
+      document.getElementById("topPageTitle").textContent = titles[menuId] || "Sistem QA/QC";
       refreshActiveView();
     }
 
@@ -1398,8 +1593,10 @@
 
       renderSCurve(sBoq, sLogs);
 
-      // Rekap BOQ Table
-      const colorMap = { "Merah": "#dc2626", "Biru": "#2563eb", "Kuning": "#eab308", "Hijau": "#16a34a", "Putih": "#94a3b8" };
+      // Rekap BOQ + Berat Table
+      let sumTargetBerat = 0;
+      let sumAppBerat = 0;
+
       document.getElementById("dashBoqBody").innerHTML = sBoq.map(b => {
         const iLogs = sLogs.filter(l => l.bangunan === b.bangunan && l.kodeItem === b.kodeItem);
         const okQty = iLogs.filter(l => l.statusQc === "OK").reduce((s, l) => s + Number(l.qty || 0), 0);
@@ -1408,6 +1605,11 @@
         const rwQty = iLogs.filter(l => l.statusApproval === "Rework").reduce((s, l) => s + Number(l.qty || 0), 0);
         const papuaQty = iLogs.filter(l => l.statusTracking === "QC Incoming Papua").reduce((s, l) => s + Number(l.qty || 0), 0);
         const sisa = Math.max(0, Number(b.target) - okQty);
+
+        const bSatuan = Number(b.beratSatuan) || 0;
+        const totalBeratItem = bSatuan * Number(b.target || 0);
+        sumTargetBerat += totalBeratItem;
+        sumAppBerat += bSatuan * appQty;
 
         const t = Number(b.target) || 1;
         const pApp = Math.min(100, (appQty / t) * 100);
@@ -1419,8 +1621,10 @@
             <td><span class="pill ${b.bangunan === 'Office' ? 'pill-blue' : 'pill-purple'}">${b.bangunan}</span></td>
             <td><strong>${b.kodeItem}</strong></td>
             <td>${b.namaItem}</td>
-            <td><span style="display:inline-flex; align-items:center; gap:5px; font-weight:600;"><span style="width:10px; height:10px; border-radius:2px; background:${colorMap[b.warna] || '#64748b'};"></span>${b.warna}</span></td>
+            <td>${renderColorBadge(b.warna)}</td>
+            <td class="text-right">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "<span style='color:#94a3b8;'>0 kg</span>"}</td>
             <td class="text-right"><strong>${b.target}</strong> ${b.satuan}</td>
+            <td class="text-right">${formatWeightHtml(totalBeratItem, "0 kg")}</td>
             <td class="text-right" style="color:var(--green); font-weight:700;">${okQty}</td>
             <td class="text-right" style="color:var(--green-dark); font-weight:700;">${appQty}</td>
             <td class="text-right" style="color:${rwQty > 0 ? 'var(--red)' : 'var(--slate-400)'}; font-weight:700;">${rwQty}</td>
@@ -1436,6 +1640,14 @@
           </tr>
         `;
       }).join("");
+
+      document.getElementById("dashBoqFoot").innerHTML = `
+        <tr>
+          <td colspan="6" class="text-right">TOTAL ESTIMASI BERAT MATERIAL BOQ (APPROVED: ${formatWeightPlain(sumAppBerat)}):</td>
+          <td class="text-right" style="color:var(--blue-dark);">${formatWeightHtml(sumTargetBerat, "0 kg")}</td>
+          <td colspan="6"></td>
+        </tr>
+      `;
     }
 
     function setCurveMode(mode) {
@@ -1444,15 +1656,19 @@
     }
 
     function renderSCurve(sBoq, sLogs) {
+      document.getElementById("scurveCardTitle").textContent = `Kurva S Progres Fabrikasi (${totalWeeks} Minggu)`;
       const totalTarget = sBoq.reduce((s, b) => s + Number(b.target || 0), 0) || 1;
-      const planQty = [
-        sBoq.reduce((s, b) => s + Number(b.planW1 || 0), 0),
-        sBoq.reduce((s, b) => s + Number(b.planW2 || 0), 0),
-        sBoq.reduce((s, b) => s + Number(b.planW3 || 0), 0),
-        sBoq.reduce((s, b) => s + Number(b.planW4 || 0), 0)
-      ];
 
-      const weeks = ["W1", "W2", "W3", "W4"];
+      const weeks = [];
+      for (let w = 1; w <= totalWeeks; w++) weeks.push(`W${w}`);
+
+      const planQty = weeks.map((_, idx) => {
+        return sBoq.reduce((s, b) => {
+          const pArr = getItemPlans(b);
+          return s + (Number(pArr[idx]) || 0);
+        }, 0);
+      });
+
       let cum = 0;
       const actualQty = weeks.map(w => {
         const wOk = sLogs.filter(l => l.minggu === w && l.statusQc === "OK").reduce((s, l) => s + Number(l.qty || 0), 0);
@@ -1463,7 +1679,7 @@
       const planPct = planQty.map(q => Number(((q / totalTarget) * 100).toFixed(1)));
       const actualPct = actualQty.map(q => Number(((q / totalTarget) * 100).toFixed(1)));
 
-      // Determine latest active week for ON TRACK / DELAY badge
+      // Tentukan minggu aktif terakhir untuk badge ON TRACK / DELAY
       let activeIdx = 0;
       weeks.forEach((w, idx) => {
         if (sLogs.some(l => l.minggu === w)) activeIdx = idx;
@@ -1483,10 +1699,11 @@
       const maxY = curveMode === "pct" ? 100 : Math.max(totalTarget, ...pVals, ...aVals, 10);
       const suf = curveMode === "pct" ? "%" : "";
 
-      const W = 720, H = 220, padL = 50, padR = 25, padT = 22, padB = 34;
+      const W = Math.max(720, totalWeeks * 90);
+      const H = 230, padL = 52, padR = 28, padT = 24, padB = 36;
       const plotW = W - padL - padR;
       const plotH = H - padT - padB;
-      const xPos = i => padL + ((i + 1) / 4) * plotW;
+      const xPos = i => padL + ((i + 1) / totalWeeks) * plotW;
       const yPos = v => padT + plotH - (Math.min(v, maxY) / maxY) * plotH;
 
       let grid = "";
@@ -1505,15 +1722,16 @@
       let markers = "";
       weeks.forEach((w, i) => {
         const px = xPos(i), py = yPos(pVals[i]), ay = yPos(aVals[i]);
-        markers += `<text x="${px}" y="${H - 10}" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">Minggu ${i+1} (${w})</text>`;
+        const xLabel = totalWeeks > 8 ? w : `Minggu ${i+1} (${w})`;
+        markers += `<text x="${px}" y="${H - 10}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">${xLabel}</text>`;
         markers += `<circle cx="${px}" cy="${py}" r="4.5" fill="#64748b"/>`;
-        markers += `<text x="${px}" y="${py - 9}" text-anchor="middle" font-size="10.5" fill="#475569">${pVals[i]}${suf}</text>`;
+        markers += `<text x="${px}" y="${py - 9}" text-anchor="middle" font-size="10" fill="#475569">${pVals[i]}${suf}</text>`;
         markers += `<circle cx="${px}" cy="${ay}" r="5.5" fill="#16a34a" stroke="#fff" stroke-width="1.5"/>`;
-        markers += `<text x="${px}" y="${ay + 16}" text-anchor="middle" font-size="11" font-weight="700" fill="#15803d">${aVals[i]}${suf}</text>`;
+        markers += `<text x="${px}" y="${ay + 16}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#15803d">${aVals[i]}${suf}</text>`;
       });
 
       document.getElementById("scurveSvgWrap").innerHTML = `
-        <svg viewBox="0 0 ${W} ${H}" style="width:100%; max-width:820px; height:auto; display:block;">
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%; min-width:${Math.min(W, 640)}px; height:auto; display:block;">
           ${grid}
           <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H - padB}" stroke="#94a3b8"/>
           <line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="#94a3b8"/>
@@ -1521,6 +1739,13 @@
           <path d="${aPath}" fill="none" stroke="#16a34a" stroke-width="3"/>
           ${markers}
         </svg>
+      `;
+
+      document.getElementById("scurveTableHead").innerHTML = `
+        <tr>
+          <th>Parameter Kumulatif</th>
+          ${weeks.map((w, i) => `<th class="text-center">Minggu ${i + 1} (${w})</th>`).join("")}
+        </tr>
       `;
 
       const devs = aVals.map((a, i) => Number((a - pVals[i]).toFixed(1)));
@@ -1540,41 +1765,166 @@
       `;
     }
 
-    // ==================== MENU 2: DOCUMENT CONTROL ====================
+    // ==================== MENU 2: KELOLA MASTER BOQ, BERAT, MINGGU & DOC CONTROL ====================
+    function setQuickWeeks(n) {
+      document.getElementById("inpTotalWeeks").value = n;
+    }
+
+    async function saveProjectWeeks() {
+      const val = parseInt(document.getElementById("inpTotalWeeks").value, 10);
+      if (isNaN(val) || val < 1 || val > 52) {
+        alert("Masukkan jumlah minggu antara 1 hingga 52.");
+        return;
+      }
+
+      const btn = document.getElementById("btnSaveWeeks");
+      btn.disabled = true;
+      btn.textContent = "Menyimpan...";
+
+      totalWeeks = val;
+      localStorage.setItem("tangguh_v2_weeks", String(totalWeeks));
+
+      // Sesuaikan array plans pada semua item lokal
+      boqItems = boqItems.map(item => ({
+        ...item,
+        plans: getItemPlans(item)
+      }));
+      saveLocalAll();
+
+      if (apiUrl && apiUrl.startsWith("http")) {
+        try {
+          await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              action: "updateProjectConfig",
+              totalWeeks: totalWeeks
+            })
+          });
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+
+      btn.disabled = false;
+      btn.textContent = "Simpan Durasi & Sinkronkan";
+      renderDocControl();
+      alert(`Durasi proyek berhasil diperbarui menjadi ${totalWeeks} Minggu! Kurva S, Tabel Plan, dan Form Inspeksi QC Jakarta otomatis menyesuaikan.`);
+    }
+
     function renderDocControl() {
-      const canEdit = currentUser.kelolaDocBoq === true;
+      const canEdit = isManagerRole();
       document.getElementById("btnAddBoqDoc").style.display = canEdit ? "inline-flex" : "none";
+      document.getElementById("activeWeeksBadge").textContent = `Durasi Aktif: ${totalWeeks} Minggu`;
+      document.getElementById("inpTotalWeeks").value = totalWeeks;
 
       const sBoq = getScopedBoq();
+      let grandTotalBerat = 0;
+
+      // 1. Render Tabel Kelola Item BOQ (Tambah, Edit, Hapus, Berat, Warna)
+      document.getElementById("boqManageTableBody").innerHTML = sBoq.length === 0
+        ? `<tr><td colspan="10" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada item material BOQ pada area ini. Klik "+ Tambah Item Material".</td></tr>`
+        : sBoq.map((b, idx) => {
+          const bSatuan = Number(b.beratSatuan) || 0;
+          const totalBerat = bSatuan * Number(b.target || 0);
+          grandTotalBerat += totalBerat;
+          const plans = getItemPlans(b);
+          const planSummary = plans.map((v, i) => `W${i+1}:${v}`).join(" | ");
+
+          return `
+            <tr>
+              <td class="text-center">${idx + 1}</td>
+              <td><span class="pill ${b.bangunan === 'Office' ? 'pill-blue' : 'pill-purple'}">${b.bangunan}</span></td>
+              <td><strong>${b.kodeItem}</strong></td>
+              <td>
+                <div style="font-weight:700; color:var(--navy);">${b.namaItem}</div>
+                <div style="font-size:0.72rem; color:var(--slate-500);">${b.section}</div>
+              </td>
+              <td>${renderColorBadge(b.warna)}</td>
+              <td class="text-right">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "<span style='color:#94a3b8;'>0 kg</span>"}</td>
+              <td class="text-right"><strong>${b.target}</strong> ${b.satuan}</td>
+              <td class="text-right">${formatWeightHtml(totalBerat, "0 kg")}</td>
+              <td style="font-size:0.72rem; color:var(--slate-600); max-width:210px;">${planSummary}</td>
+              <td class="text-center">
+                <div style="display:flex; gap:5px; justify-content:center;">
+                  <button type="button" class="btn btn-light btn-sm" onclick="openBoqModal('${b.idItem}')">Edit</button>
+                  <button type="button" class="btn btn-danger btn-sm" onclick="deleteBoqDoc('${b.idItem}')">Hapus</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+      document.getElementById("boqManageTableFoot").innerHTML = `
+        <tr>
+          <td colspan="7" class="text-right">TOTAL BERAT KESELURUHAN ITEM BOQ (${activeBuilding}):</td>
+          <td class="text-right" style="color:var(--blue-dark);">${formatWeightHtml(grandTotalBerat, "0 kg")}</td>
+          <td colspan="2"></td>
+        </tr>
+      `;
+
+      // 2. Render Kartu Referensi Gambar Standar Document Control
       document.getElementById("docControlCards").innerHTML = sBoq.map(b => {
         const imgSrc = b.gambarUrl || getDefaultSchematicSvg(b.kodeItem, b.warna);
+        const totalBerat = (Number(b.beratSatuan) || 0) * Number(b.target || 0);
         return `
           <div class="card" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between;">
             <div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
                 <span class="pill ${b.bangunan === 'Office' ? 'pill-blue' : 'pill-purple'}">${b.bangunan} • ${b.kodeItem}</span>
-                <span class="pill pill-gray">Warna: ${b.warna}</span>
+                ${renderColorBadge(b.warna)}
               </div>
-              <img src="${imgSrc}" alt="${b.kodeItem}" style="width:100%; height:150px; object-fit:contain; background:#f8fafc; border:1px solid var(--border); border-radius:7px; margin-bottom:8px;" />
+              <img src="${imgSrc}" alt="${b.kodeItem}" style="width:100%; height:145px; object-fit:contain; background:#f8fafc; border:1px solid var(--border); border-radius:7px; margin-bottom:8px;" />
               <div style="font-weight:800; font-size:0.9rem; color:var(--navy);">${b.namaItem}</div>
-              <div style="font-size:0.75rem; color:var(--slate-500); margin-bottom:6px;">Section: ${b.section} • Target BOQ: <strong>${b.target} ${b.satuan}</strong></div>
+              <div style="font-size:0.75rem; color:var(--slate-600); margin:3px 0 6px;">
+                Target: <strong>${b.target} ${b.satuan}</strong> • Berat: <strong>${formatWeightPlain(totalBerat)}</strong>
+              </div>
               <div style="font-size:0.77rem; background:var(--slate-50); border:1px solid var(--slate-200); padding:7px 9px; border-radius:6px; color:var(--slate-700);">
                 ${b.catatanStandar || "Belum ada catatan standar."}
               </div>
             </div>
-            ${canEdit ? `<button class="btn btn-light btn-sm" style="width:100%; margin-top:10px;" onclick="openBoqModal('${b.idItem}')">Edit Target BOQ / Upload Gambar</button>` : ""}
+            ${canEdit ? `
+              <div style="display:flex; gap:6px; margin-top:10px;">
+                <button class="btn btn-light btn-sm" style="flex:1;" onclick="openBoqModal('${b.idItem}')">Edit Item &amp; Gambar</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteBoqDoc('${b.idItem}')">Hapus</button>
+              </div>
+            ` : ""}
           </div>
         `;
       }).join("");
     }
 
-    // ==================== MENU 3: INPUT INSPEKSI (STAGE 2) & APPROVAL ====================
+    // ==================== MENU 3: INPUT INSPEKSI & APPROVAL JAKARTA ====================
+    function populateWeekDropdown() {
+      const wSel = document.getElementById("fInspMinggu");
+      if (!wSel) return;
+      const prevVal = wSel.value;
+      let html = "";
+      for (let w = 1; w <= totalWeeks; w++) {
+        html += `<option value="W${w}">Minggu ${w} (W${w})</option>`;
+      }
+      wSel.innerHTML = html;
+      if (prevVal && Array.from(wSel.options).some(o => o.value === prevVal)) {
+        wSel.value = prevVal;
+      }
+    }
+
     function setupInspectionView() {
       const canInput = currentUser.bisaInput === true;
       document.getElementById("workshopInputCard").style.display = canInput ? "block" : "none";
       document.getElementById("pmNoticeBanner").style.display = currentUser.role === "PM" ? "block" : "none";
 
+      // Sesuaikan header & subjudul tabel log sesuai role (Teknisi fokus input tanpa kolom Approval atasan)
+      const isMgr = isManagerRole();
+      document.getElementById("logCardTitle").textContent = isMgr
+        ? "Log Inspeksi Harian & Approval Atasan (Jakarta)"
+        : "Riwayat Input Inspeksi Saya / Harian";
+      document.getElementById("logCardSub").textContent = isMgr
+        ? "Klik tombol Approve / Rework untuk memvalidasi bundel sebelum dikirim ke Papua"
+        : "Daftar bundel yang sudah diinput dari lapangan (status approval diperbarui otomatis oleh atasan)";
+
       if (canInput) {
+        populateWeekDropdown();
         const bSel = document.getElementById("fInspBangunan");
         if (activeBuilding === "Office" || activeBuilding === "Workshop") {
           bSel.value = activeBuilding;
@@ -1604,7 +1954,8 @@
       // Update Document Control Linear Reference
       document.getElementById("inspRefImg").src = item.gambarUrl || getDefaultSchematicSvg(item.kodeItem, item.warna);
       document.getElementById("inspRefTitle").textContent = `${item.kodeItem} — ${item.namaItem}`;
-      document.getElementById("inspRefMeta").textContent = `Bangunan: ${item.bangunan} | Warna Modul: ${item.warna} | Target BOQ: ${item.target} ${item.satuan}`;
+      const warnaLabel = item.warna || "Belum Ditentukan / Tanpa Warna";
+      document.getElementById("inspRefMeta").textContent = `Bangunan: ${item.bangunan} | Warna Modul: ${warnaLabel} | Target BOQ: ${item.target} ${item.satuan}`;
       document.getElementById("inspRefNote").textContent = item.catatanStandar || "Periksa dimensi, kelurusan, las, lubang baut & label.";
 
       // Auto-generate next 3-digit Bundle Tag
@@ -1843,6 +2194,7 @@
 
     function renderInspectionTables() {
       const sLogs = getScopedLogs();
+      const isMgr = isManagerRole();
 
       // 1. Antrean Rework
       const rwList = sLogs.filter(l => l.statusApproval === "Rework");
@@ -1865,12 +2217,24 @@
           </tr>
         `).join("");
 
-      // 2. Log Inspeksi & Approval
+      // 2. Log Inspeksi (Kolom Aksi Atasan hanya tampil untuk PM / Site Engineer)
+      document.getElementById("logJakartaHead").innerHTML = `
+        <tr>
+          <th>Tag Bundel &amp; Minggu</th>
+          <th>Bangunan &amp; Kode Item</th>
+          <th>Unit &amp; Qty</th>
+          <th>Catatan &amp; Petugas</th>
+          <th class="text-center">Dokumentasi Foto</th>
+          <th>Status</th>
+          ${isMgr ? `<th class="text-center">Aksi Atasan</th>` : ""}
+        </tr>
+      `;
+
       const filterApp = document.getElementById("filterLogApproval").value;
       const filtered = sLogs.filter(l => filterApp === "ALL" || l.statusApproval === filterApp);
 
       document.getElementById("logJakartaBody").innerHTML = filtered.length === 0
-        ? `<tr><td colspan="7" class="text-center" style="color:var(--slate-500); padding:16px;">Belum ada data log inspeksi pada filter ini.</td></tr>`
+        ? `<tr><td colspan="${isMgr ? 7 : 6}" class="text-center" style="color:var(--slate-500); padding:16px;">Belum ada data log inspeksi pada filter ini.</td></tr>`
         : filtered.map(l => {
           let pillCls = "pill-amber";
           if (l.statusApproval === "Approved") pillCls = "pill-green";
@@ -1905,11 +2269,11 @@
                 <span class="pill ${pillCls}">${l.statusApproval}</span>
                 ${l.approvedBy && l.approvedBy !== "-" ? `<div style="font-size:0.7rem; color:var(--slate-500); margin-top:3px;">${l.approvedBy}</div>` : ""}
               </td>
-              <td class="text-center">
-                ${currentUser.bisaApprove
-                  ? `<button class="btn ${l.statusApproval === 'Approved' ? 'btn-light' : 'btn-success'} btn-sm" onclick="openApproveModal('${l.idLog}')">${l.statusApproval === 'Approved' ? 'Ubah' : 'Approve'}</button>`
-                  : `<span style="font-size:0.72rem; color:var(--slate-400);">Terkunci</span>`}
-              </td>
+              ${isMgr ? `
+                <td class="text-center">
+                  <button class="btn ${l.statusApproval === 'Approved' ? 'btn-light' : 'btn-success'} btn-sm" onclick="openApproveModal('${l.idLog}')">${l.statusApproval === 'Approved' ? 'Ubah' : 'Approve'}</button>
+                </td>
+              ` : ""}
             </tr>
           `;
         }).join("");
@@ -2043,10 +2407,34 @@
       renderSidebarNav();
     }
 
-    // ==================== MENU 4: SHIPPING & QC INCOMING PAPUA (STAGE 3) ====================
+    // ==================== MENU 4: SHIPPING & QC INCOMING PAPUA ====================
+    function getBundleWeightKg(logObj) {
+      const item = boqItems.find(b => b.bangunan === logObj.bangunan && b.kodeItem === logObj.kodeItem);
+      const unitW = item ? (Number(item.beratSatuan) || 0) : 0;
+      return unitW * (Number(logObj.qty) || 0);
+    }
+
+    function updateSelectedShipWeightUI() {
+      const badge = document.getElementById("selectedShipWeightBadge");
+      if (selectedShipIds.size === 0) {
+        badge.style.display = "none";
+        return;
+      }
+      let totalKg = 0;
+      selectedShipIds.forEach(id => {
+        const l = logs.find(x => x.idLog === id);
+        if (l) totalKg += getBundleWeightKg(l);
+      });
+      badge.style.display = "inline-block";
+      badge.textContent = `Terpilih: ${selectedShipIds.size} Bundel (${formatWeightPlain(totalKg)})`;
+    }
+
     function renderPapuaTracking() {
       const sLogs = getScopedLogs().filter(l => l.statusApproval === "Approved" || l.statusTracking === "Dalam Pengiriman" || l.statusTracking === "QC Incoming Papua");
       const stageFilter = document.getElementById("filterTrackingStage").value;
+
+      // KPI Pengiriman hanya tampil untuk Manager (PM / Site Engineer)
+      document.getElementById("papuaKpiGrid").style.display = isManagerRole() ? "grid" : "none";
 
       const cSiap = sLogs.filter(l => l.statusTracking === "Siap Kirim").length;
       const cShip = sLogs.filter(l => l.statusTracking === "Dalam Pengiriman").length;
@@ -2057,6 +2445,7 @@
       document.getElementById("cntPapuaDone").textContent = cPapua;
 
       document.getElementById("btnBatchShipping").style.display = currentUser.bisaInput ? "inline-flex" : "none";
+      updateSelectedShipWeightUI();
 
       const filtered = sLogs.filter(l => stageFilter === "ALL" || l.statusTracking === stageFilter);
 
@@ -2066,6 +2455,7 @@
           const isSiap = l.statusTracking === "Siap Kirim";
           const isShip = l.statusTracking === "Dalam Pengiriman";
           const isDone = l.statusTracking === "QC Incoming Papua";
+          const bundleKg = getBundleWeightKg(l);
 
           let stPill = `<span class="pill pill-green">1. Siap Kirim (Approved JKT)</span>`;
           if (isShip) stPill = `<span class="pill pill-blue">2. Dalam Pengiriman</span>`;
@@ -2095,7 +2485,10 @@
               <td>${isSiap && currentUser.bisaInput ? `<input type="checkbox" class="ship-chk" value="${l.idLog}" ${selectedShipIds.has(l.idLog) ? 'checked' : ''} onchange="toggleShipCheck('${l.idLog}', this.checked)" />` : ""}</td>
               <td><strong>${l.tagBundel}</strong></td>
               <td>${l.bangunan} • <strong>${l.kodeItem}</strong><div style="font-size:0.72rem; color:var(--slate-500);">${l.namaItem}</div></td>
-              <td><strong>${l.qty}</strong> Unit<div style="font-size:0.71rem; color:var(--slate-500);">${l.unitList}</div></td>
+              <td>
+                <div><strong>${l.qty}</strong> Unit • <span style="color:var(--blue-dark); font-weight:700;">${formatWeightPlain(bundleKg)}</span></div>
+                <div style="font-size:0.71rem; color:var(--slate-500);">${l.unitList}</div>
+              </td>
               <td>${stPill}</td>
               <td>${shipInfo}</td>
               <td>${papuaInfo}</td>
@@ -2109,6 +2502,7 @@
     function toggleShipCheck(idLog, checked) {
       if (checked) selectedShipIds.add(idLog);
       else selectedShipIds.delete(idLog);
+      updateSelectedShipWeightUI();
     }
 
     function toggleAllShipCheck(checked) {
@@ -2117,11 +2511,13 @@
         if (checked) selectedShipIds.add(cb.value);
         else selectedShipIds.delete(cb.value);
       });
+      updateSelectedShipWeightUI();
     }
 
     function openSingleShipping(idLog) {
       selectedShipIds.clear();
       selectedShipIds.add(idLog);
+      updateSelectedShipWeightUI();
       openShippingModal();
     }
 
@@ -2130,11 +2526,14 @@
         alert("Centang minimal 1 bundel berstatus 'Siap Kirim' terlebih dahulu.");
         return;
       }
+      let totalKg = 0;
       const tags = Array.from(selectedShipIds).map(id => {
         const l = logs.find(x => x.idLog === id);
+        if (l) totalKg += getBundleWeightKg(l);
         return l ? l.tagBundel : id;
       });
       document.getElementById("shipModalDesc").textContent = `Bundel yang dikirim (${tags.length}): ${tags.join(", ")}`;
+      document.getElementById("shipWeightSummaryBox").textContent = `Total Estimasi Berat Muatan Kontainer: ${formatWeightPlain(totalKg)}`;
       document.getElementById("shipNoKontainer").value = "";
       document.getElementById("shipTglBerangkat").value = new Date().toISOString().split("T")[0];
       document.getElementById("shipEstimasi").value = "";
@@ -2415,11 +2814,40 @@
       }
     }
 
-    function refreshLiveWatermarkPreview() {
-      // Optional visual cue when status changes
+    function refreshLiveWatermarkPreview() {}
+
+    // ==================== BOQ & DOCUMENT CONTROL MODAL (TAMBAH, EDIT, HAPUS) ====================
+    function renderModalWeekInputs(plansArr) {
+      document.getElementById("bPlanLabel").textContent = `Rencana Kumulatif per Minggu (W1 s/d W${totalWeeks})`;
+      let html = "";
+      for (let i = 0; i < totalWeeks; i++) {
+        const val = (plansArr && plansArr[i] !== undefined) ? plansArr[i] : 0;
+        html += `
+          <div class="week-plan-cell">
+            <label>W${i + 1}</label>
+            <input type="number" id="bPlanW_${i}" class="form-control" min="0" value="${val}" />
+          </div>
+        `;
+      }
+      document.getElementById("bWeekPlanInputs").innerHTML = html;
     }
 
-    // ==================== BOQ & DOCUMENT CONTROL MODAL ====================
+    function autoDistributePlan() {
+      const target = Math.max(0, Number(document.getElementById("bTarget").value) || 0);
+      for (let i = 0; i < totalWeeks; i++) {
+        const cum = Math.round(((i + 1) / totalWeeks) * target);
+        const inp = document.getElementById(`bPlanW_${i}`);
+        if (inp) inp.value = cum;
+      }
+    }
+
+    function updateModalWeightPreview() {
+      const target = Number(document.getElementById("bTarget").value) || 0;
+      const berat = Number(document.getElementById("bBerat").value) || 0;
+      const totalKg = target * berat;
+      document.getElementById("bTotalWeightHint").textContent = `Total Berat BOQ: ${formatWeightPlain(totalKg)}`;
+    }
+
     function openBoqModal(idItem) {
       capturedPhotos.boqDoc = "";
       const imgPrev = document.getElementById("bImgPreview");
@@ -2433,35 +2861,37 @@
         document.getElementById("bIdItem").value = b.idItem;
         document.getElementById("bBangunan").value = b.bangunan;
         document.getElementById("bKode").value = b.kodeItem;
-        document.getElementById("bWarna").value = b.warna;
+        document.getElementById("bWarna").value = COLOR_MAP[b.warna] ? b.warna : "Belum Ditentukan / Tanpa Warna";
         document.getElementById("bNama").value = b.namaItem;
         document.getElementById("bSection").value = b.section;
         document.getElementById("bSatuan").value = b.satuan;
         document.getElementById("bTarget").value = b.target;
-        document.getElementById("bW1").value = b.planW1;
-        document.getElementById("bW2").value = b.planW2;
-        document.getElementById("bW3").value = b.planW3;
-        document.getElementById("bW4").value = b.planW4;
+        document.getElementById("bBerat").value = Number(b.beratSatuan) || 0;
+        renderModalWeekInputs(getItemPlans(b));
         document.getElementById("bCatatan").value = b.catatanStandar || "";
         if (b.gambarUrl) {
           imgPrev.src = b.gambarUrl;
           imgPrev.style.display = "block";
         }
       } else {
-        document.getElementById("boqModalTitle").textContent = "Tambah Item BOQ & Referensi Gambar Baru";
+        document.getElementById("boqModalTitle").textContent = "Tambah Item Material BOQ Baru";
         document.getElementById("bIdItem").value = "BOQ-" + Date.now();
         document.getElementById("bBangunan").value = activeBuilding === "Workshop" ? "Workshop" : "Office";
         document.getElementById("bKode").value = "";
+        document.getElementById("bWarna").value = "Belum Ditentukan / Tanpa Warna";
         document.getElementById("bNama").value = "";
         document.getElementById("bSection").value = "Struktur Utama";
         document.getElementById("bSatuan").value = "Batang";
         document.getElementById("bTarget").value = 20;
-        document.getElementById("bW1").value = 5;
-        document.getElementById("bW2").value = 10;
-        document.getElementById("bW3").value = 15;
-        document.getElementById("bW4").value = 20;
+        document.getElementById("bBerat").value = 0;
+        const defaultPlans = [];
+        for (let i = 0; i < totalWeeks; i++) {
+          defaultPlans.push(Math.round(((i + 1) / totalWeeks) * 20));
+        }
+        renderModalWeekInputs(defaultPlans);
         document.getElementById("bCatatan").value = "";
       }
+      updateModalWeightPreview();
       document.getElementById("boqModal").classList.add("show");
     }
 
@@ -2495,6 +2925,12 @@
       const namaItem = document.getElementById("bNama").value.trim();
       if (!kodeItem || !namaItem) { alert("Kode Item dan Nama Item wajib diisi."); return; }
 
+      const plansArr = [];
+      for (let i = 0; i < totalWeeks; i++) {
+        const inp = document.getElementById(`bPlanW_${i}`);
+        plansArr.push(inp ? (Number(inp.value) || 0) : 0);
+      }
+
       const btn = document.getElementById("btnSaveBoqDoc");
       btn.disabled = true; btn.textContent = "Menyimpan...";
 
@@ -2508,10 +2944,12 @@
         warna: document.getElementById("bWarna").value,
         satuan: document.getElementById("bSatuan").value.trim(),
         target: Number(document.getElementById("bTarget").value) || 0,
-        planW1: Number(document.getElementById("bW1").value) || 0,
-        planW2: Number(document.getElementById("bW2").value) || 0,
-        planW3: Number(document.getElementById("bW3").value) || 0,
-        planW4: Number(document.getElementById("bW4").value) || 0,
+        beratSatuan: Number(document.getElementById("bBerat").value) || 0,
+        plans: plansArr,
+        planW1: plansArr[0] || 0,
+        planW2: plansArr[1] || 0,
+        planW3: plansArr[2] || 0,
+        planW4: plansArr[3] || 0,
         gambarUrl: capturedPhotos.boqDoc || (existing ? existing.gambarUrl : ""),
         catatanStandar: document.getElementById("bCatatan").value.trim()
       };
@@ -2545,6 +2983,31 @@
       renderDocControl();
     }
 
+    async function deleteBoqDoc(idItem) {
+      const b = boqItems.find(x => x.idItem === idItem);
+      if (!b) return;
+      if (!confirm(`Hapus item BOQ "${b.kodeItem} — ${b.namaItem}" (${b.bangunan})?\nItem yang dihapus akan hilang dari daftar target BOQ & Kurva S.`)) {
+        return;
+      }
+
+      boqItems = boqItems.filter(x => x.idItem !== idItem);
+      saveLocalAll();
+      renderDocControl();
+
+      if (apiUrl && apiUrl.startsWith("http")) {
+        try {
+          await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              action: "deleteBoqDoc",
+              idItem: idItem
+            })
+          });
+        } catch (e) { console.warn(e); }
+      }
+    }
+
     // ==================== PHOTO TRAIL VIEWER ====================
     function openPhotoTrail(idLog) {
       const l = logs.find(x => x.idLog === idLog);
@@ -2574,12 +3037,14 @@
       document.getElementById("photoTrailModal").classList.add("show");
     }
 
-    // ==================== MENU 5: CETAK PDF BERBASIS BOQ ====================
+    // ==================== MENU 5: CETAK PDF BERBASIS BOQ (RAPI & TANDA TANGAN SEJAJAR) ====================
     function buildBoqReportHtml() {
       const sBoq = getScopedBoq();
       const sLogs = getScopedLogs();
       const areaTitle = activeBuilding === "Gabungan" ? "BANGUNAN OFFICE & WORKSHOP (GABUNGAN)" : `BANGUNAN ${activeBuilding.toUpperCase()}`;
       const today = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+
+      let sumTargetBerat = 0;
 
       const boqRows = sBoq.map((b, idx) => {
         const iLogs = sLogs.filter(l => l.bangunan === b.bangunan && l.kodeItem === b.kodeItem);
@@ -2590,13 +3055,20 @@
         const sisa = Math.max(0, Number(b.target) - okQty);
         const pct = b.target > 0 ? Math.round((appQty / b.target) * 100) : 0;
 
+        const bSatuan = Number(b.beratSatuan) || 0;
+        const totBerat = bSatuan * Number(b.target || 0);
+        sumTargetBerat += totBerat;
+        const warnaTxt = (!b.warna || b.warna === "Belum Ditentukan / Tanpa Warna") ? "-" : b.warna;
+
         return `
           <tr>
             <td style="text-align:center;">${idx + 1}</td>
-            <td><strong>${b.kodeItem}</strong><br><small>${b.bangunan}</small></td>
+            <td><strong>${b.kodeItem}</strong><br><small style="color:#475569;">${b.bangunan}</small></td>
             <td>${b.namaItem}<br><small style="color:#475569;">${b.section}</small></td>
-            <td style="text-align:center;">${b.warna}</td>
+            <td style="text-align:center;">${warnaTxt}</td>
+            <td style="text-align:right;">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "-"}</td>
             <td style="text-align:right;"><strong>${b.target}</strong> ${b.satuan}</td>
+            <td style="text-align:right;">${totBerat > 0 ? formatWeightPlain(totBerat) : "-"}</td>
             <td style="text-align:right;">${okQty}</td>
             <td style="text-align:right;"><strong>${appQty}</strong></td>
             <td style="text-align:right;">${shipQty} / ${papuaQty}</td>
@@ -2606,49 +3078,62 @@
         `;
       }).join("");
 
-      const bundleRows = sLogs.map((l, idx) => `
-        <tr>
-          <td style="text-align:center;">${idx + 1}</td>
-          <td><strong>${l.tagBundel}</strong></td>
-          <td>${l.kodeItem} (${l.bangunan})</td>
-          <td>${l.unitList} (${l.qty})</td>
-          <td>${l.statusApproval}</td>
-          <td>${l.statusTracking}${l.noKontainer ? ` (${l.noKontainer})` : ""}</td>
-          <td>${l.kondisiPapua || "-"}</td>
-        </tr>
-      `).join("");
+      const bundleRows = sLogs.length === 0
+        ? `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:10px;">Belum ada rincian tag bundel tercatat.</td></tr>`
+        : sLogs.map((l, idx) => `
+          <tr>
+            <td style="text-align:center;">${idx + 1}</td>
+            <td><strong>${l.tagBundel}</strong></td>
+            <td>${l.kodeItem} (${l.bangunan})</td>
+            <td>${l.unitList} (${l.qty} Unit • ${formatWeightPlain(getBundleWeightKg(l))})</td>
+            <td>${l.statusApproval}</td>
+            <td>${l.statusTracking}${l.noKontainer ? ` (${l.noKontainer})` : ""}</td>
+            <td>${l.kondisiPapua || "-"}</td>
+          </tr>
+        `).join("");
 
       return `
         <div class="p-head">
           <h2>BERITA ACARA PROGRES QA/QC FABRIKASI &amp; TRACKING MATERIAL (BERBASIS BOQ)</h2>
-          <p><strong>Proyek:</strong> Temporary Utility — LNG Tangguh | <strong>Area:</strong> ${areaTitle} | <strong>Tanggal Cetak:</strong> ${today}</p>
+          <p><strong>Proyek:</strong> Temporary Utility — LNG Tangguh &nbsp;|&nbsp; <strong>Area:</strong> ${areaTitle} &nbsp;|&nbsp; <strong>Durasi:</strong> ${totalWeeks} Minggu &nbsp;|&nbsp; <strong>Tanggal Cetak:</strong> ${today}</p>
         </div>
-        <h4 style="margin-bottom:6px;">1. Rekapitulasi Capaian Berdasarkan Daftar Item BOQ</h4>
+
+        <div class="p-sec-title">1. Rekapitulasi Capaian Berdasarkan Daftar Item BOQ</div>
         <table class="p-table">
           <thead>
             <tr>
-              <th>No</th>
+              <th style="width:28px; text-align:center;">No</th>
               <th>Kode Item</th>
               <th>Deskripsi Item BOQ</th>
-              <th>Warna</th>
-              <th>Target BOQ</th>
-              <th>Lolos QC</th>
-              <th>Approved JKT</th>
-              <th>Kirim / Tiba Papua</th>
-              <th>Kurang / Sisa</th>
-              <th>% Approved</th>
+              <th style="text-align:center;">Warna</th>
+              <th style="text-align:right;">Berat/Unit</th>
+              <th style="text-align:right;">Target BOQ</th>
+              <th style="text-align:right;">Total Berat BOQ</th>
+              <th style="text-align:right;">Lolos QC</th>
+              <th style="text-align:right;">Approved JKT</th>
+              <th style="text-align:right;">Kirim / Tiba Papua</th>
+              <th style="text-align:right;">Kurang / Sisa</th>
+              <th style="text-align:center;">% Approved</th>
             </tr>
           </thead>
           <tbody>${boqRows}</tbody>
+          <tfoot>
+            <tr>
+              <td colspan="6" style="text-align:right;">TOTAL BERAT MATERIAL BOQ:</td>
+              <td style="text-align:right;">${formatWeightPlain(sumTargetBerat)}</td>
+              <td colspan="5"></td>
+            </tr>
+          </tfoot>
         </table>
-        <h4 style="margin-bottom:6px;">2. Rincian Tag Bundel, Status Approval &amp; Tracking Pengiriman</h4>
+
+        <div class="p-sec-title">2. Rincian Tag Bundel, Status Approval &amp; Tracking Pengiriman</div>
         <table class="p-table">
           <thead>
             <tr>
-              <th>No</th>
+              <th style="width:28px; text-align:center;">No</th>
               <th>Tag Bundel</th>
               <th>Kode Item</th>
-              <th>Nomor Unit &amp; Qty</th>
+              <th>Nomor Unit, Qty &amp; Berat</th>
               <th>Approval Jakarta</th>
               <th>Status Tracking</th>
               <th>QC Incoming Papua</th>
@@ -2656,20 +3141,23 @@
           </thead>
           <tbody>${bundleRows}</tbody>
         </table>
-        <div class="p-sign">
-          <div>
-            <div>Diperiksa &amp; Disusun Oleh (Lapangan):</div>
-            <div class="p-sign-box"></div>
-            <div><strong>______________________________</strong></div>
-            <div>Site Engineer / QA-QC Lead</div>
-          </div>
-          <div>
-            <div>Disetujui Oleh (Kantor Pusat):</div>
-            <div class="p-sign-box"></div>
-            <div><strong>______________________________</strong></div>
-            <div>Project Manager</div>
-          </div>
-        </div>
+
+        <table class="p-sign-table">
+          <tr>
+            <td>
+              <div>Disusun,</div>
+              <div class="p-sign-space"></div>
+              <div class="p-sign-line"></div>
+              <div><strong>Site Engineer</strong></div>
+            </td>
+            <td>
+              <div>Disetujui,</div>
+              <div class="p-sign-space"></div>
+              <div class="p-sign-line"></div>
+              <div><strong>Project Manager</strong></div>
+            </td>
+          </tr>
+        </table>
       `;
     }
 
@@ -2686,6 +3174,7 @@
     function saveLocalAll() {
       localStorage.setItem("tangguh_v2_boq", JSON.stringify(boqItems));
       localStorage.setItem("tangguh_v2_logs", JSON.stringify(logs));
+      localStorage.setItem("tangguh_v2_weeks", String(totalWeeks));
     }
 
     function openDbModal() {
@@ -2711,6 +3200,7 @@
         const res = await fetch(apiUrl + "?t=" + Date.now());
         const data = await res.json();
         if (data.status === "success") {
+          if (data.totalWeeks) totalWeeks = parseInt(data.totalWeeks, 10) || 4;
           if (data.users && data.users.length > 0) masterUsers = data.users;
           if (data.boqItems && data.boqItems.length > 0) boqItems = data.boqItems;
           if (data.logs) logs = data.logs.slice().reverse();
