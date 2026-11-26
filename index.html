@@ -33,7 +33,9 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    html, body { overscroll-behavior-y: none; overscroll-behavior-x: none; }
     body { background: var(--slate-100); color: var(--navy); line-height: 1.45; }
+    #appShell, .layout-wrap, .main-area, .content-pad { overscroll-behavior-y: contain; }
 
     /* ================= LOGIN SCREEN ================= */
     #loginScreen {
@@ -850,6 +852,7 @@
                       <th>Kode Item</th>
                       <th>Nama / Deskripsi Item</th>
                       <th>Dimensi</th>
+                      <th class="text-center">Proses Welder</th>
                       <th class="text-right">Berat Satuan</th>
                       <th class="text-right">Target BOQ</th>
                       <th class="text-right">Total Berat BOQ</th>
@@ -1502,6 +1505,14 @@
           <label class="form-label">Dimensi / Ukuran</label>
           <input type="text" id="bDimensi" class="form-control" placeholder="Contoh: 200 x 100 x 6 x 8 mm atau Ø 100 mm" />
         </div>
+        <div class="form-group">
+          <label class="form-label">Apakah Item Memerlukan Proses Welder?</label>
+          <select id="bProsesWelder" class="form-control">
+            <option value="false">Tidak — tidak memerlukan welder</option>
+            <option value="true">Ya — memerlukan proses welder</option>
+          </select>
+          <div style="font-size:0.71rem; color:var(--slate-500); margin-top:3px;">Pilihan Welder hanya akan muncul pada form inspeksi jika opsi ini dipilih Ya.</div>
+        </div>
       <div class="grid-3">
         <div class="form-group">
           <label class="form-label">Satuan</label>
@@ -1587,6 +1598,10 @@
     let sessionActivityHandler = null;
     let sessionVisibilityHandler = null;
     let sessionExpiryInProgress = false;
+    let cloudRefreshTimer = null;
+    let cloudRevisionPollInFlight = false;
+    let cloudSyncInProgress = false;
+    let currentCloudRevision = "";
     let activeBuilding = "Office";
     let activeMenu = "dashboard";
 
@@ -1825,6 +1840,9 @@
       if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
       sessionIdleTimer = null;
       sessionHeartbeatTimer = null;
+      if (cloudRefreshTimer) clearInterval(cloudRefreshTimer);
+      cloudRefreshTimer = null;
+      cloudRevisionPollInFlight = false;
       if (sessionActivityHandler) {
         ["click", "keydown", "mousemove", "pointerdown", "touchstart", "scroll"].forEach(evt => {
           window.removeEventListener(evt, sessionActivityHandler, { passive: true });
@@ -1877,6 +1895,39 @@
           console.warn("Heartbeat sesi gagal:", err);
         }
       }, 30000);
+      startCloudAutoRefresh();
+    }
+
+    // Pemeriksaan revisi berjalan setiap 2 detik. Data lengkap hanya dimuat ulang jika server berubah.
+    function startCloudAutoRefresh() {
+      if (cloudRefreshTimer) clearInterval(cloudRefreshTimer);
+      cloudRefreshTimer = setInterval(checkCloudRevision, 2000);
+    }
+
+    async function checkCloudRevision() {
+      if (!currentUser || !currentSessionToken || !apiUrl || document.hidden || cloudRevisionPollInFlight || cloudSyncInProgress) return;
+      if (Date.now() - lastUserActivityAt >= SESSION_IDLE_TIMEOUT_MS) return;
+      // Jangan render ulang saat pengguna sedang mengisi form atau modal belum selesai.
+      if (document.querySelector(".modal-backdrop.show")) return;
+      const active = document.activeElement;
+      if (active && active.matches && active.matches("input, textarea, select, [contenteditable='true']")) return;
+
+      cloudRevisionPollInFlight = true;
+      try {
+        const url = apiUrl + "?mode=revision&sessionToken=" + encodeURIComponent(currentSessionToken) + "&t=" + Date.now();
+        const res = await fetch(url, { cache: "no-store" });
+        const data = await res.json();
+        if (!res.ok || data.status !== "success") return;
+        const revision = String(data.revision || "");
+        if (revision && currentCloudRevision && revision !== currentCloudRevision) {
+          await syncFromCloud(true);
+        }
+      } catch (err) {
+        // Gangguan polling singkat tidak mengeluarkan pengguna; tombol Refresh Data tetap tersedia.
+        console.warn("Pemeriksaan pembaruan otomatis gagal:", err);
+      } finally {
+        cloudRevisionPollInFlight = false;
+      }
     }
 
     async function expireSessionForInactivity() {
@@ -1886,6 +1937,47 @@
       alert("Sesi otomatis berakhir karena tidak ada aktivitas selama 5 menit. Silakan login kembali.");
       sessionExpiryInProgress = false;
     }
+
+    // Pull-to-refresh khusus aplikasi: cegah browser Android me-reload halaman dan hilangkan sesi.
+    let appPullStartY = null;
+    let appPullDistance = 0;
+    let appPullTriggered = false;
+    document.addEventListener("touchstart", event => {
+      if (!currentUser || !event.touches || !event.touches.length) return;
+      const scrollTop = document.scrollingElement ? document.scrollingElement.scrollTop : window.scrollY;
+      if (scrollTop <= 1) {
+        appPullStartY = event.touches[0].clientY;
+        appPullDistance = 0;
+        appPullTriggered = false;
+      } else {
+        appPullStartY = null;
+      }
+    }, { passive: true });
+    document.addEventListener("touchmove", event => {
+      if (appPullStartY === null || !currentUser || !event.touches || !event.touches.length) return;
+      const delta = event.touches[0].clientY - appPullStartY;
+      if (delta > 0) {
+        appPullDistance = delta;
+        if (event.cancelable) event.preventDefault();
+      } else {
+        appPullStartY = null;
+      }
+    }, { passive: false });
+    document.addEventListener("touchend", () => {
+      if (appPullStartY !== null && appPullDistance >= 70 && !appPullTriggered && currentUser) {
+        appPullTriggered = true;
+        syncFromCloud(true).then(ok => {
+          const pill = document.getElementById("connPillText");
+          if (pill && ok) pill.textContent = "Data berhasil diperbarui";
+        });
+      }
+      appPullStartY = null;
+      appPullDistance = 0;
+    }, { passive: true });
+    document.addEventListener("touchcancel", () => {
+      appPullStartY = null;
+      appPullDistance = 0;
+    }, { passive: true });
 
     // Tutup dropdown unit saat klik di luar
     document.addEventListener("click", (e) => {
@@ -1938,19 +2030,15 @@
         currentSessionToken = data.sessionToken;
         sessionStorage.setItem("tangguh_v2_session_token", currentSessionToken);
         sessionStorage.setItem("tangguh_v2_session_user", JSON.stringify(currentUser));
-        if (!(await syncFromCloud(true))) {
-          await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "logout", sessionToken: currentSessionToken })
-          }).catch(() => {});
-          clearBrowserSession_();
-          currentUser = null;
-          currentSessionToken = "";
-          throw new Error("Login berhasil, tetapi data proyek gagal dimuat. Silakan coba lagi.");
-        }
+        // Tampilkan shell segera; data cache lokal tetap terlihat sementara data cloud dimuat.
         enterApp();
         startSessionMonitor();
+        const initialSyncOk = await syncFromCloud(true);
+        if (!initialSyncOk) {
+          const pillText = document.getElementById("connPillText");
+          if (pillText) pillText.textContent = "Gagal memuat data — coba Refresh Data";
+          alert("Login berhasil, tetapi sinkronisasi data belum selesai. Periksa koneksi lalu tekan Refresh Data sebelum melakukan input.");
+        }
       } catch (err) {
         console.error("Login cloud gagal:", err);
         errBox.textContent = err.message || "Tidak dapat memverifikasi login ke Google Sheets.";
@@ -2679,7 +2767,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const pageItems = sBoq.slice(startIdx, startIdx + PAGE_SIZE);
 
       document.getElementById("boqManageTableBody").innerHTML = pageItems.length === 0
-        ? `<tr><td colspan="9" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada item material BOQ pada area ini. Klik "+ Tambah Item Material".</td></tr>`
+        ? `<tr><td colspan="10" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada item material BOQ pada area ini. Klik "+ Tambah Item Material".</td></tr>`
         : pageItems.map((b, idx) => {
           const bSatuan = Number(b.beratSatuan) || 0;
           const totalBerat = bSatuan * Number(b.target || 0);
@@ -2692,6 +2780,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
                 <div style="font-weight:700; color:var(--navy);">${b.namaItem}</div>
               </td>
               <td>${b.dimensi || "-"}</td>
+              <td class="text-center"><span class="pill ${b.prosesWelder === true ? 'pill-green' : 'pill-gray'}">${b.prosesWelder === true ? 'Ya' : 'Tidak'}</span></td>
               <td class="text-right">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "<span style='color:#94a3b8;'>0 kg</span>"}</td>
               <td class="text-right"><strong>${b.target}</strong> ${b.satuan}</td>
               <td class="text-right">${formatWeightHtml(totalBerat, "0 kg")}</td>
@@ -2707,7 +2796,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
 
       document.getElementById("boqManageTableFoot").innerHTML = `
         <tr>
-          <td colspan="7" class="text-right">TOTAL BERAT KESELURUHAN ITEM BOQ (${activeBuilding}):</td>
+          <td colspan="8" class="text-right">TOTAL BERAT KESELURUHAN ITEM BOQ (${activeBuilding}):</td>
           <td class="text-right" style="color:var(--blue-dark);">${formatWeightHtml(grandTotalBerat, "0 kg")}</td>
           <td></td>
         </tr>
@@ -2905,6 +2994,10 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       document.getElementById("inspRefMeta").textContent = "-";
       document.getElementById("inspRefNote").textContent = "-";
       document.getElementById("fInspCatatan").value = "";
+      const welderWrap = document.getElementById("welderSelectWrap");
+      const welderSelect = document.getElementById("fInspWelder");
+      if (welderWrap) welderWrap.style.display = "none";
+      if (welderSelect) welderSelect.value = "";
       const dependent = document.getElementById("inspectionItemDependentFields");
       const notice = document.getElementById("inspectionNoBoqNotice");
       if (dependent) dependent.style.display = "none";
@@ -2919,11 +3012,9 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
     function onInspBuildingChange() {
       const bldg = document.getElementById("fInspBangunan").value;
       const welderWrap = document.getElementById("welderSelectWrap");
-      if (welderWrap) {
-        const showWelder = isWelderBuilding(bldg);
-        welderWrap.style.display = showWelder ? "block" : "none";
-        if (showWelder) populateWelderDropdown();
-      }
+      if (welderWrap) welderWrap.style.display = "none";
+      const welderSelect = document.getElementById("fInspWelder");
+      if (welderSelect) welderSelect.value = "";
       const items = boqItems.filter(b => b.bangunan === bldg);
       const kSel = document.getElementById("fInspKode");
       kSel.innerHTML = items.length === 0
@@ -2951,6 +3042,12 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const notice = document.getElementById("inspectionNoBoqNotice");
       if (dependent) dependent.style.display = "block";
       if (notice) notice.style.display = "none";
+      const welderWrap = document.getElementById("welderSelectWrap");
+      const welderSelect = document.getElementById("fInspWelder");
+      const needsWelder = item.prosesWelder === true;
+      if (welderWrap) welderWrap.style.display = needsWelder ? "block" : "none";
+      if (needsWelder) populateWelderDropdown();
+      else if (welderSelect) welderSelect.value = "";
       selectedUnits.clear();
       capturedPhotos.insp = "";
       const preview = document.getElementById("inspPhotoPreview");
@@ -3408,7 +3505,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const statusQc = document.getElementById("fInspStatusQc").value;
       const minggu = "-";
       const catatan = document.getElementById("fInspCatatan").value.trim();
-      const welder = (bldg === "Office" || bldg === "Workshop") ? document.getElementById("fInspWelder").value : "";
+      const welder = item && item.prosesWelder === true ? document.getElementById("fInspWelder").value : "";
 
       const now = new Date();
       const pad = n => String(n).padStart(2, "0");
@@ -3618,8 +3715,10 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       document.getElementById("editInspectionUnitList").value = log.unitList || "";
       document.getElementById("editInspectionStatus").value = log.statusQc || "OK";
       document.getElementById("editInspectionNote").value = log.catatanInspeksi || "";
+      const editBoqItem = boqItems.find(b => b.bangunan === log.bangunan && b.kodeItem === log.kodeItem);
+      const editNeedsWelder = !!(editBoqItem && editBoqItem.prosesWelder === true);
       populateWelderDropdown("editInspectionWelder", log.welder || "");
-      document.getElementById("editInspectionWelderWrap").style.display = isWelderBuilding(log.bangunan) ? "block" : "none";
+      document.getElementById("editInspectionWelderWrap").style.display = editNeedsWelder ? "block" : "none";
       const trackingAdvanced = ["Dalam Pengiriman", "QC Incoming Papua"].includes(log.statusTracking);
       document.getElementById("editInspectionUnitHint").textContent = trackingAdvanced
         ? "Kode Tag Fisik sudah masuk tahap pengiriman / penerimaan. Nomor unit tidak dapat diubah; koreksi catatan dan welder masih dapat dilakukan."
@@ -3678,7 +3777,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         qty: units.length,
         statusQc: nextStatus,
         catatanInspeksi: document.getElementById("editInspectionNote").value.trim(),
-        welder: isWelderBuilding(oldLog.bangunan) ? document.getElementById("editInspectionWelder").value : (oldLog.welder || "")
+        welder: item.prosesWelder === true ? document.getElementById("editInspectionWelder").value : ""
       };
       if (!trackingAdvanced && (nextStatus !== oldLog.statusQc || nextUnitList !== String(oldLog.unitList || ""))) {
         updatedLog.statusApproval = nextStatus === "Rework" ? "Rework" : "Menunggu Approval";
@@ -4426,6 +4525,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         document.getElementById("bKode").value = b.kodeItem;
         document.getElementById("bNama").value = b.namaItem;
         document.getElementById("bDimensi").value = b.dimensi || "";
+        document.getElementById("bProsesWelder").value = b.prosesWelder === true ? "true" : "false";
         document.getElementById("bSatuan").value = b.satuan;
         document.getElementById("bTarget").value = b.target;
         document.getElementById("bBerat").value = Number(b.beratSatuan) || 0;
@@ -4438,6 +4538,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         document.getElementById("bKode").value = "";
         document.getElementById("bNama").value = "";
         document.getElementById("bDimensi").value = "";
+        document.getElementById("bProsesWelder").value = "false";
         document.getElementById("bSatuan").value = "Batang";
         document.getElementById("bTarget").value = 20;
         document.getElementById("bBerat").value = 0;
@@ -4469,7 +4570,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         img.onload = () => {
           try {
             const canvas = document.createElement("canvas");
-            const maxDimension = 2400;
+            const maxDimension = 1800;
             const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
             const w = Math.max(1, Math.round(img.width * scale));
             const h = Math.max(1, Math.round(img.height * scale));
@@ -4485,8 +4586,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
 
             // PNG dipertahankan untuk gambar teknik/garis; foto JPG/WEBP dikonversi ke JPEG kualitas tinggi.
             const outputType = file.type === "image/png" ? "image/png" : "image/jpeg";
-            let imageData = outputType === "image/png" ? canvas.toDataURL(outputType) : canvas.toDataURL(outputType, 0.92);
-            if (imageData.length > 16 * 1024 * 1024) {
+            let imageData = outputType === "image/png" ? canvas.toDataURL(outputType) : canvas.toDataURL(outputType, 0.86);
+            if (imageData.length > 8 * 1024 * 1024) {
               const reducedCanvas = document.createElement("canvas");
               const reduceScale = Math.min(1, 1800 / Math.max(w, h));
               reducedCanvas.width = Math.max(1, Math.round(w * reduceScale));
@@ -4495,9 +4596,9 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
               reducedCtx.fillStyle = "#ffffff";
               reducedCtx.fillRect(0, 0, reducedCanvas.width, reducedCanvas.height);
               reducedCtx.drawImage(canvas, 0, 0, reducedCanvas.width, reducedCanvas.height);
-              imageData = reducedCanvas.toDataURL("image/jpeg", 0.9);
+              imageData = reducedCanvas.toDataURL("image/jpeg", 0.84);
             }
-            if (imageData.length > 16 * 1024 * 1024) throw new Error("Gambar hasil kompresi masih terlalu besar. Gunakan gambar dengan ukuran lebih kecil.");
+            if (imageData.length > 8 * 1024 * 1024) throw new Error("Gambar hasil kompresi masih terlalu besar. Gunakan gambar dengan ukuran lebih kecil atau resolusi lebih rendah.");
 
             capturedPhotos.boqDoc = imageData;
             setBoqModalImagePreview(imageData, `Gambar siap diunggah (${w.toLocaleString("id-ID")} × ${h.toLocaleString("id-ID")} piksel). File belum tersimpan ke Google Drive sampai Anda menekan Simpan.`);
@@ -4530,6 +4631,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         kodeItem,
         namaItem,
         dimensi: document.getElementById("bDimensi").value.trim(),
+        prosesWelder: document.getElementById("bProsesWelder").value === "true",
         warna: existing ? (existing.warna || "Belum Ditentukan / Tanpa Warna") : "Belum Ditentukan / Tanpa Warna",
         satuan: document.getElementById("bSatuan").value.trim(),
         target: Number(document.getElementById("bTarget").value) || 0,
@@ -4996,6 +5098,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
 
     async function syncFromCloud(silent) {
       if (!apiUrl || !apiUrl.startsWith("http") || !currentSessionToken) return false;
+      if (cloudSyncInProgress) return true;
+      cloudSyncInProgress = true;
       const pillTxt = document.getElementById("connPillText");
       if (pillTxt) pillTxt.textContent = "Menyinkronkan...";
       try {
@@ -5021,6 +5125,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           logs = logs.map(log => ({...log, bangunan: resolveBuildingName(log.bangunan)}));
           inspectionOverrides = JSON.parse(localStorage.getItem("tangguh_v2_inspection_overrides")) || {};
           logs = logs.map(log => inspectionOverrides[log.idLog] ? {...log, ...inspectionOverrides[log.idLog]} : log);
+          currentCloudRevision = String(data.revision || currentCloudRevision || "");
           if (Array.isArray(data.welderNames) && data.welderNames.length >= 2) {
             welderNames = data.welderNames.map(String);
             welderNamesOverride = null;
@@ -5041,6 +5146,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         if (pillTxt) pillTxt.textContent = "Gagal Sync (Cek URL)";
         if (!silent) alert(err.message || "Gagal terhubung ke Google Sheets. Periksa URL Web App dan sesi login.");
         return false;
+      } finally {
+        cloudSyncInProgress = false;
       }
     }
 
