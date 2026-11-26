@@ -414,26 +414,37 @@
       border-bottom: 1px solid var(--slate-200);
     }
     .unit-dd-list {
-      max-height: 230px;
+      max-height: 280px;
       overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 6px;
+      padding: 2px;
     }
     .unit-dd-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 7px 10px;
-      border-radius: 6px;
-      border: 1px solid var(--slate-200);
-      background: #fff;
-      font-size: 0.8rem;
-      cursor: pointer;
+      width: 100%; min-width: 0; min-height: 48px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; padding: 5px 2px; border-radius: 7px;
+      border: 1px solid var(--slate-300, #cbd5e1); background: #fff;
+      color: var(--slate-700); font-size: 0.76rem; line-height: 1.15;
+      cursor: pointer; text-align: center;
     }
-    .unit-dd-item:hover:not(.disabled) { background: #eff6ff; border-color: #93c5fd; }
-    .unit-dd-item.selected { background: #dbeafe; border-color: var(--blue); font-weight: 700; }
-    .unit-dd-item.disabled { background: var(--slate-50); cursor: not-allowed; opacity: 0.85; }
+    .unit-seat-number { font-size: 0.8rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .unit-seat-state { font-size: 0.58rem; font-weight: 700; color: var(--slate-500); }
+    .unit-dd-item:hover:not(:disabled) { background: #eff6ff; border-color: #93c5fd; }
+    .unit-dd-item.selected { background: #dbeafe; border-color: var(--blue); color: #1e40af; font-weight: 700; }
+    .unit-dd-item.selected .unit-seat-state { color: #1e40af; }
+    .unit-dd-item:disabled, .unit-dd-item.disabled {
+      background: #e2e8f0; border-color: #cbd5e1; color: #64748b;
+      cursor: not-allowed; opacity: 1;
+    }
+    .unit-dd-item:disabled .unit-seat-state, .unit-dd-item.disabled .unit-seat-state { color: #64748b; }
+    .unit-seat-legend { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 8px; font-size:0.7rem; color:var(--slate-600); }
+    .unit-seat-legend span { display:inline-flex; align-items:center; gap:4px; }
+    .unit-seat-legend i { display:inline-block; width:10px; height:10px; border-radius:3px; border:1px solid var(--border); }
+    .unit-seat-legend .seat-available { background:#fff; }
+    .unit-seat-legend .seat-selected { background:#dbeafe; border-color:var(--blue); }
+    .unit-seat-legend .seat-used { background:#e2e8f0; border-color:#cbd5e1; }
     .selected-chips-wrap {
       display: flex;
       flex-wrap: wrap;
@@ -488,6 +499,38 @@
     @media (max-width: 640px) {
       .doc-ref-img { height: 190px; }
       .doc-control-image { height: 200px; }
+      .content-pad { padding: 10px 8px; }
+      #workshopInputCard { padding: 12px; }
+      #workshopInputCard .card-header { margin-bottom: 8px; padding-bottom: 8px; align-items: flex-start; }
+      #workshopInputCard .card-sub { display: none; }
+      #workshopInputCard .card-title { font-size: 0.88rem; }
+      #workshopInputCard .barcode-banner { padding: 8px; margin-bottom: 10px; gap: 7px; }
+      #workshopInputCard .barcode-banner > div:first-child > div:nth-child(2) { display: none; }
+      #workshopInputCard .barcode-input-group { width: 100%; }
+      #workshopInputCard .barcode-input-group input { flex: 1 1 100%; width: 100% !important; }
+      #workshopInputCard .doc-ref-box { grid-template-columns: 76px minmax(0, 1fr); gap: 8px; padding: 8px; margin-bottom: 10px; align-items: start; }
+      #workshopInputCard .doc-ref-img { height: 76px; padding: 2px; }
+      #workshopInputCard #inspRefTitle { font-size: 0.78rem !important; overflow-wrap: anywhere; }
+      #workshopInputCard #inspRefMeta { font-size: 0.67rem !important; line-height: 1.35; }
+      #workshopInputCard #inspRefNote { font-size: 0.69rem !important; padding: 5px 6px !important; }
+      #workshopInputCard .form-group { margin-bottom: 9px; }
+      #workshopInputCard .form-label { font-size: 0.73rem; margin-bottom: 3px; }
+      #workshopInputCard .unit-dd-trigger { padding: 8px; }
+      #workshopInputCard .unit-dd-menu { padding: 8px; }
+      #workshopInputCard .unit-dd-toolbar { align-items: stretch; gap: 7px; }
+      #workshopInputCard .unit-dd-toolbar > div { width: 100%; }
+      #workshopInputCard #unitSearchInp,
+      #workshopInputCard #unitStatusFilter { width: 100% !important; }
+      #workshopInputCard .unit-dd-list { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px; max-height: 230px; }
+      #workshopInputCard .unit-dd-item { min-height: 34px; padding: 3px 0; border-radius: 5px; }
+      #workshopInputCard .unit-seat-number { font-size: 0.65rem; }
+      #workshopInputCard .unit-seat-state { font-size: 0.48rem; }
+      #workshopInputCard .unit-seat-legend { gap: 7px; font-size: 0.64rem; }
+      #workshopInputCard .selected-chips-wrap { margin-top: 5px; }
+      #workshopInputCard .cam-box { padding: 8px; }
+      #workshopInputCard .cam-box > div:first-child { gap: 5px; }
+      #workshopInputCard .cam-preview { max-height: 150px; }
+      #workshopInputCard #btnSubmitInsp { padding: 10px !important; font-size: 0.82rem !important; }
     }
 
     /* ================= IN-APP LIVE CAMERA (ZERO GALLERY STORAGE) ================= */
@@ -626,12 +669,6 @@
           Masuk ke Sistem
         </button>
       </form>
-
-      <div style="margin-top:12px; text-align:center;">
-        <button type="button" class="btn btn-light btn-sm" style="width:100%; font-size:0.78rem;" onclick="quickGuestLogin()">
-          Masuk Cepat sebagai Guest (Lihat Data Saja)
-        </button>
-      </div>
 
       <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--slate-200); display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:var(--slate-500);">
         <span id="loginConnStatus">Status DB: Mode Lokal</span>
@@ -897,6 +934,11 @@
                   </div>
                 </div>
 
+                <div id="inspectionNoBoqNotice" class="card" style="display:block; background:#fff7ed; border-color:#fed7aa; color:#9a3412;">
+                  Pilih Kode Item BOQ terlebih dahulu. Form input inspeksi, pemilihan unit, dan kamera akan aktif setelah item BOQ dipilih.
+                </div>
+
+                <div id="inspectionItemDependentFields" style="display:none;">
                 <!-- PREVIEW LINEAR DARI DOCUMENT CONTROL -->
                 <div class="doc-ref-box" id="inspDocPreview">
                   <div class="doc-ref-image-wrap">
@@ -914,7 +956,7 @@
 
                 <!-- PEMILIH NOMOR SATUAN UNIT BERBENTUK DROPDOWN (REVISI LAMPIRAN 1) -->
                 <div class="form-group">
-                  <label class="form-label">Pilih Nomor Satuan Unit (Dropdown Status Sudah QC / Belum QC)</label>
+                  <label class="form-label">Pilih Nomor Unit</label>
                   <div class="unit-dd-wrap" id="unitDropdownWrap">
                     <button type="button" class="unit-dd-trigger" onclick="toggleUnitDropdown()">
                       <div>
@@ -946,7 +988,11 @@
                       <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
                         <input type="text" id="unitRangeInp" class="form-control" style="max-width:230px; padding:6px 8px; font-size:0.78rem;" placeholder="Rentang unit: 001-005,008" />
                         <button type="button" class="btn btn-light btn-sm" onclick="selectUnitsByRange()">Pilih Rentang / Nomor</button>
-                        <span style="font-size:0.7rem; color:var(--slate-500);">Pemilihan manual tetap tersedia pada daftar unit.</span>
+                      </div>
+                      <div class="unit-seat-legend">
+                        <span><i class="seat-available"></i> Belum QC</span>
+                        <span><i class="seat-selected"></i> Dipilih</span>
+                        <span><i class="seat-used"></i> Sudah diinput (terkunci)</span>
                       </div>
                       <div class="unit-dd-list" id="unitDropdownList"></div>
                     </div>
@@ -992,6 +1038,7 @@
                 <button type="submit" id="btnSubmitInsp" class="btn btn-primary" style="width:100%; padding:11px; font-size:0.88rem;">
                   Simpan Hasil Inspeksi &amp; Terbitkan Kode Tag Fisik
                 </button>
+                </div>
               </form>
             </div>
 
@@ -1053,27 +1100,9 @@
             </div>
           </section>
 
-          <!-- ==================== MENU KHUSUS: QC INCOMING DI PAPUA (SCAN BARCODE TAGGING FISIK) ==================== -->
-          <section id="secPapua" style="display:none;">
-            <!-- SCANNER KHUSUS QC INCOMING PAPUA -->
-            <div class="card papua-scan-card">
-              <div class="papua-scan-heading">
-                <div>
-                  <div class="card-title" style="color:#5b21b6;">Scan Kode Tag Fisik — QC Incoming Papua</div>
-                  <div class="card-sub">Gunakan scanner barcode fisik. Hasil scan akan dicocokkan dengan Kode Tag Fisik pada daftar pengiriman.</div>
-                </div>
-                <span class="pill pill-purple">Scan cepat</span>
-              </div>
-              <div class="papua-scan-row">
-                <input type="text" id="papuaBarcodeInput" class="form-control" placeholder="Scan Kode Tag Fisik di sini..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); processPapuaBarcode(this.value);}" />
-                <button type="button" class="btn btn-primary" onclick="processPapuaBarcode(document.getElementById('papuaBarcodeInput').value)">Proses Scan</button>
-                <button type="button" class="btn btn-light btn-sm" onclick="openBarcodeScanner('papua')">Kamera</button>
-                <button type="button" class="btn btn-light btn-sm" id="btnResetPapuaScan" style="display:none;" onclick="resetPapuaScanFilter()">Reset Daftar</button>
-              </div>
-              <div id="papuaScanFeedback" class="scan-feedback"></div>
-            </div>
-
-            <!-- KPI Pengiriman hanya tampil untuk PM & Site Engineer -->
+          <!-- ==================== MENU 5: PENGIRIMAN MATERIAL JAKARTA -> PAPUA ==================== -->
+          <section id="secShipping" style="display:none;">
+            <!-- KPI PENGIRIMAN -->
             <div class="grid-3" id="papuaKpiGrid" style="margin-bottom:14px;">
               <div class="kpi-card green">
                 <div class="kpi-lbl">1. Siap Kirim (Approved JKT)</div>
@@ -1095,16 +1124,15 @@
             <div class="card">
               <div class="card-header">
                 <div>
-                  <div class="card-title">Daftar Material Pengiriman (Jakarta &rarr; Papua) &amp; QC Incoming Papua</div>
-                  <div class="card-sub">Kode Tag Fisik adalah satu barcode untuk satu kelompok unit. Scan kode tersebut untuk melihat identitas item, nomor unit, dan status pengirimannya.</div>
+                  <div class="card-title">Daftar Material Pengiriman (Jakarta &rarr; Papua)</div>
+                  <div class="card-sub">Kelola material yang sudah Approved Jakarta, persiapan kontainer, dan status keberangkatan menuju Papua.</div>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                   <span id="selectedShipWeightBadge" class="pill pill-blue" style="display:none; font-size:0.76rem;">Terpilih: 0 Kode Tag Fisik (0 kg)</span>
-                  <select id="filterTrackingStage" class="form-control" style="width:auto; padding:5px 10px; font-size:0.78rem;" onchange="renderPapuaTracking()">
-                    <option value="ALL">Semua Tahap</option>
-                    <option value="Dalam Pengiriman">Dalam Pengiriman (Siap QC Incoming)</option>
-                    <option value="Siap Kirim">Siap Kirim (Approved JKT)</option>
-                    <option value="QC Incoming Papua">Sudah QC Incoming Papua</option>
+                  <select id="filterShippingStage" class="form-control" style="width:auto; padding:5px 10px; font-size:0.78rem;" onchange="renderShippingTracking()">
+                    <option value="ALL">Semua Status Pengiriman</option>
+                    <option value="Siap Kirim">Siap Kirim</option>
+                    <option value="Dalam Pengiriman">Dalam Pengiriman</option>
                   </select>
                   <button class="btn btn-primary btn-sm" id="btnBatchShipping" onclick="openShippingModal()">+ Input Keberangkatan Kontainer</button>
                 </div>
@@ -1121,32 +1149,94 @@
                       <th>Nomor Unit</th>
                       <th>Qty</th>
                       <th>Berat Total</th>
-                      <th>Status Tracking</th>
+                      <th>Status Pengiriman</th>
                       <th>No. Kontainer</th>
                       <th>Tanggal Berangkat</th>
                       <th>Estimasi Tiba</th>
-                      <th>Kondisi QC Papua</th>
-                      <th>Tanggal Terima Papua</th>
-                      <th>Catatan QC Papua</th>
                       <th class="text-center">Foto Trail</th>
                       <th class="text-center">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody id="trackingTableBody"></tbody>
+                  <tbody id="shippingTableBody"></tbody>
                 </table>
               </div>
             </div>
           </section>
 
-          <!-- ==================== MENU 5: CETAK PDF BERDASARKAN BOQ (KHUSUS PM / SE) ==================== -->
+          <!-- ==================== MENU 6: QC INCOMING PAPUA ==================== -->
+          <section id="secPapua" style="display:none;">
+            <div class="card papua-scan-card">
+              <div class="papua-scan-heading">
+                <div>
+                  <div class="card-title" style="color:#5b21b6;">Scan Kode Tag Fisik — QC Incoming Papua</div>
+                  <div class="card-sub">Scan kode tag pada material yang sudah berstatus Dalam Pengiriman. Data bundle akan ditemukan berdasarkan kode yang sama persis.</div>
+                </div>
+                <span class="pill pill-purple">Scan cepat</span>
+              </div>
+              <div class="papua-scan-row">
+                <input type="text" id="papuaBarcodeInput" class="form-control" placeholder="Scan Kode Tag Fisik di sini..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); processPapuaBarcode(this.value);}" />
+                <button type="button" class="btn btn-primary" onclick="processPapuaBarcode(document.getElementById('papuaBarcodeInput').value)">Proses Scan</button>
+                <button type="button" class="btn btn-light btn-sm" onclick="openBarcodeScanner('papua')">Kamera</button>
+              </div>
+              <div id="papuaScanFeedback" class="scan-feedback"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Daftar Material untuk QC Incoming Papua</div>
+                  <div class="card-sub">Menampilkan material yang sedang dalam perjalanan dan material yang sudah dikonfirmasi diterima di Papua.</div>
+                </div>
+                <select id="filterPapuaIncomingStage" class="form-control" style="width:auto; padding:5px 10px; font-size:0.78rem;" onchange="renderPapuaIncomingTracking()">
+                  <option value="ALL">Semua Status QC Incoming</option>
+                  <option value="Dalam Pengiriman">Menunggu QC Incoming</option>
+                  <option value="QC Incoming Papua">Sudah Diterima</option>
+                </select>
+              </div>
+              <div class="table-wrap">
+                <table class="readable-tracking-table">
+                  <thead>
+                    <tr>
+                      <th>Kode Tag Fisik</th>
+                      <th>Bangunan</th>
+                      <th>Kode Item</th>
+                      <th>Nama Item</th>
+                      <th>Nomor Unit</th>
+                      <th>Qty</th>
+                      <th>No. Kontainer</th>
+                      <th>Tanggal Berangkat</th>
+                      <th>Estimasi Tiba</th>
+                      <th>Status QC Incoming</th>
+                      <th>Tanggal Terima</th>
+                      <th>Kondisi Material</th>
+                      <th>Catatan QC Papua</th>
+                      <th class="text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="papuaIncomingTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ==================== MENU 7: CETAK PDF BERDASARKAN BOQ (KHUSUS PM / SE) ==================== -->
           <section id="secPdfBoq" style="display:none;">
             <div class="card">
               <div class="card-header">
                 <div>
                   <div class="card-title">Pratinjau Laporan Berita Acara Berdasarkan Urutan BOQ</div>
-                  <div class="card-sub">Laporan otomatis mengikuti filter area bangunan aktif di sidebar kiri (format cetak A4 Landscape)</div>
+                  <div class="card-sub">Pilih status data yang akan dicetak. Filter area tetap mengikuti pilihan bangunan pada sidebar (format A4 Landscape).</div>
                 </div>
-                <button class="btn btn-success" onclick="printBoqPdf()">Cetak / Simpan PDF (A4)</button>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <select id="reportStatusFilter" class="form-control" style="width:auto; min-width:210px; padding:6px 10px; font-size:0.78rem;" onchange="renderBoqPdfPreview()">
+                    <option value="ALL">Semua Status</option>
+                    <option value="APPROVED">Sudah Approved Jakarta</option>
+                    <option value="UNAPPROVED">Belum Approved</option>
+                    <option value="SHIPPING">Sedang Dalam Pengiriman</option>
+                    <option value="ARRIVED">Sudah Tiba di Papua</option>
+                  </select>
+                  <button class="btn btn-success" onclick="printBoqPdf()">Cetak / Simpan PDF (A4)</button>
+                </div>
               </div>
               <div id="boqReportPreviewContainer" style="border:1px solid var(--border); border-radius:8px; padding:18px; background:#fff; overflow-x:auto;"></div>
             </div>
@@ -1327,17 +1417,6 @@
           <input type="date" id="shipEstimasi" class="form-control" />
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Foto Loading / Segel Kontainer (Wajib)</label>
-        <div class="cam-box">
-          <div style="display:flex; gap:6px; justify-content:center;">
-            <button type="button" class="btn btn-dark btn-sm" onclick="openLiveCamera('shipping')">Buka Kamera Live</button>
-            <button type="button" class="btn btn-light btn-sm" onclick="triggerFallbackFile('shipping')">File Cadangan</button>
-          </div>
-          <img id="shipPhotoPreview" class="cam-preview" alt="Preview Shipping" />
-          <input type="file" id="shipFallbackInput" accept="image/*" style="display:none" onchange="handleFallbackFile(event, 'shipping')" />
-        </div>
-      </div>
       <div class="modal-footer">
         <button class="btn btn-light" onclick="closeModal('shippingModal')">Batal</button>
         <button class="btn btn-primary" id="btnSubmitShip" onclick="submitShipping()">Simpan Data Pengiriman</button>
@@ -1499,7 +1578,7 @@
     const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbxyAcsM0LYV6sou5e5crw7Fv5oHBLkNu1fhBGCOomgHLu8bxvWM3BHnk5hsOCFmQILX/exec";
 
     let apiUrl = localStorage.getItem("tangguh_v2_api_url") || DEFAULT_API_URL;
-    let currentUser = JSON.parse(localStorage.getItem("tangguh_v2_user")) || null;
+    let currentUser = null;
     let activeBuilding = "Office";
     let activeMenu = "dashboard";
 
@@ -1549,15 +1628,8 @@
       "Belum Ditentukan / Tanpa Warna": "#cbd5e1"
     };
 
-    // Default Master Users (termasuk akun Guest)
-    let masterUsers = [
-      { userId: "USR-01", username: "pm_tangguh", sandi: "PM2026#", nama: "Project Manager", role: "PM", aksesBangunan: "Semua", bisaInput: false, bisaApprove: true, kelolaDocBoq: true },
-      { userId: "USR-02", username: "se_iqbal", sandi: "SE2026#", nama: "Iqbal Romadona (Site Eng)", role: "Site_Engineer", aksesBangunan: "Semua", bisaInput: true, bisaApprove: true, kelolaDocBoq: true },
-      { userId: "USR-03", username: "teknisi1", sandi: "TEK101", nama: "Teknisi 1 (Fabrikasi)", role: "Teknisi", aksesBangunan: "Office, Workshop", bisaInput: true, bisaApprove: false, kelolaDocBoq: false },
-      { userId: "USR-04", username: "teknisi2", sandi: "TEK202", nama: "Teknisi 2 (Fabrikasi)", role: "Teknisi", aksesBangunan: "Office, Workshop", bisaInput: true, bisaApprove: false, kelolaDocBoq: false },
-      { userId: "USR-05", username: "teknisi3", sandi: "TEK303", nama: "Teknisi 3 (Kitting & Label)", role: "Teknisi", aksesBangunan: "Office, Workshop", bisaInput: true, bisaApprove: false, kelolaDocBoq: false },
-      { userId: "USR-06", username: "guest", sandi: "GUEST123", nama: "Guest (Monitoring Data)", role: "Guest", aksesBangunan: "Semua", bisaInput: false, bisaApprove: false, kelolaDocBoq: false }
-    ];
+    // Master pengguna diverifikasi di server melalui sheet Users; tidak disimpan di HTML.
+    let masterUsers = [];
 
     // Default BOQ & Document Control
     const defaultBoqItems = [
@@ -1699,13 +1771,14 @@
 
     // ==================== INIT & AUTH ====================
     window.addEventListener("DOMContentLoaded", async () => {
+      // Keamanan sesi: hapus sesi lama yang pernah disimpan di browser.
+      // Pengguna wajib memasukkan username dan password setiap kali membuka ulang aplikasi.
+      localStorage.removeItem("tangguh_v2_user");
+      currentUser = null;
+      document.getElementById("appShell").style.display = "none";
+      document.getElementById("loginScreen").style.display = "flex";
       updateConnIndicators();
-      if (apiUrl) {
-        await syncFromCloud(true);
-      }
-      if (currentUser) {
-        enterApp();
-      }
+      // Sinkronisasi data baru dijalankan setelah autentikasi server berhasil.
     });
 
     // Tutup dropdown unit saat klik di luar
@@ -1722,15 +1795,6 @@
       inp.type = inp.type === "password" ? "text" : "password";
     }
 
-    function quickGuestLogin() {
-      const guestAcc = masterUsers.find(acc => acc.role === "Guest") || {
-        userId: "USR-06", username: "guest", sandi: "GUEST123", nama: "Guest (Monitoring Data)", role: "Guest", aksesBangunan: "Semua", bisaInput: false, bisaApprove: false, kelolaDocBoq: false
-      };
-      currentUser = guestAcc;
-      localStorage.setItem("tangguh_v2_user", JSON.stringify(currentUser));
-      enterApp();
-    }
-
     async function handleLogin(e) {
       e.preventDefault();
       const u = document.getElementById("loginUser").value.trim().toLowerCase();
@@ -1745,8 +1809,13 @@
         return;
       }
 
-      // Jika URL cloud dikonfigurasi, autentikasi harus diverifikasi oleh Code.gs.
-      // Password tidak diambil dari masterUsers lokal atau dikirim melalui endpoint GET.
+      // Autentikasi wajib dilakukan oleh Google Apps Script terhadap master Users.
+      // Tidak ada fallback akun/password bawaan di browser.
+      if (!apiUrl || !apiUrl.startsWith("http")) {
+        errBox.textContent = "Database Google Apps Script belum terhubung. Login lokal dinonaktifkan demi keamanan.";
+        errBox.style.display = "block";
+        return;
+      }
       if (apiUrl && apiUrl.startsWith("http")) {
         if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Memverifikasi..."; }
         try {
@@ -1763,7 +1832,6 @@
           }
 
           currentUser = data.user;
-          localStorage.setItem("tangguh_v2_user", JSON.stringify(currentUser));
           await syncFromCloud(true);
           enterApp();
           return;
@@ -1777,17 +1845,6 @@
         }
       }
 
-      // Login lokal hanya digunakan jika URL cloud memang tidak dikonfigurasi.
-      const found = masterUsers.find(acc => String(acc.username || "").toLowerCase() === u && String(acc.sandi || "") === p);
-      if (!found) {
-        errBox.textContent = "Username atau sandi salah, atau akun tidak aktif.";
-        errBox.style.display = "block";
-        return;
-      }
-
-      currentUser = found;
-      localStorage.setItem("tangguh_v2_user", JSON.stringify(currentUser));
-      enterApp();
     }
 
     function handleLogout() {
@@ -2039,6 +2096,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const pendingApp = scopedLogs.filter(l => l.statusApproval === "Menunggu Approval").length;
       const reworkCnt = scopedLogs.filter(l => l.statusApproval === "Rework").length;
       const inTransitCnt = scopedLogs.filter(l => l.statusTracking === "Dalam Pengiriman").length;
+      const shippingCnt = scopedLogs.filter(l => l.statusTracking === "Siap Kirim" || l.statusTracking === "Dalam Pengiriman").length;
 
       let items = [];
       if (isManagerRole()) {
@@ -2054,12 +2112,18 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
             badgeCls: reworkCnt > 0 ? "" : "amber"
           },
           {
+            id: "shipping",
+            label: "5. Pengiriman Material",
+            badge: shippingCnt > 0 ? `${shippingCnt}` : "",
+            badgeCls: "amber"
+          },
+          {
             id: "papua",
-            label: "5. QC Incoming Papua",
+            label: "6. QC Incoming Papua",
             badge: inTransitCnt > 0 ? `${inTransitCnt}` : "",
             badgeCls: "amber"
           },
-          { id: "pdf", label: "6. Cetak PDF Berbasis BOQ", badge: "" }
+          { id: "pdf", label: "7. Cetak PDF Berbasis BOQ", badge: "" }
         ];
       } else if (isGuestRole()) {
         document.getElementById("navSectionLabel").textContent = "Menu Guest (Lihat Data)";
@@ -2095,10 +2159,10 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
     }
 
     function switchMenu(menuId) {
-      if (isTechnicianRole() && (menuId === "dashboard" || menuId === "doc" || menuId === "approval" || menuId === "pdf" || menuId === "guestData")) {
+      if (isTechnicianRole() && (menuId === "dashboard" || menuId === "doc" || menuId === "approval" || menuId === "shipping" || menuId === "pdf" || menuId === "guestData")) {
         menuId = "inspection";
       }
-      if (isGuestRole() && (menuId === "doc" || menuId === "inspection" || menuId === "approval" || menuId === "papua")) {
+      if (isGuestRole() && (menuId === "doc" || menuId === "inspection" || menuId === "approval" || menuId === "shipping" || menuId === "papua")) {
         menuId = "dashboard";
       }
 
@@ -2112,6 +2176,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         doc: "secDocControl",
         inspection: "secInspection",
         approval: "secApproval",
+        shipping: "secShipping",
         papua: "secPapua",
         pdf: "secPdfBoq"
       };
@@ -2127,7 +2192,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           ? "Input Inspeksi QA/QC (Tidak Tersedia untuk PM)"
           : (isManagerRole() ? "Input Inspeksi QA/QC Jakarta" : "Input Inspeksi QA/QC — Workshop Jakarta"),
         approval: "Approval & Verifikasi Fabrikasi Jakarta",
-        papua: "QC Incoming Site Papua & Tracking Pengiriman",
+        shipping: "Pengiriman Material Jakarta ke Papua",
+        papua: "QC Incoming Site Papua",
         pdf: "Laporan Berita Acara Berdasarkan BOQ"
       };
       document.getElementById("topPageTitle").textContent = titles[menuId] || "Sistem QA/QC";
@@ -2159,7 +2225,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       if (activeMenu === "doc") renderDocControl();
       if (activeMenu === "inspection") setupInspectionView();
       if (activeMenu === "approval") renderInspectionTables();
-      if (activeMenu === "papua") renderPapuaTracking();
+      if (activeMenu === "shipping") renderShippingTracking();
+      if (activeMenu === "papua") renderPapuaIncomingTracking();
       if (activeMenu === "pdf") renderBoqPdfPreview();
     }
 
@@ -2646,6 +2713,47 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       }
     }
 
+    function clearInspectionItemSelection(message) {
+      selectedUnits.clear();
+      capturedPhotos.insp = "";
+      const preview = document.getElementById("inspPhotoPreview");
+      if (preview) { preview.removeAttribute("src"); preview.style.display = "none"; }
+      const unitMenu = document.getElementById("unitDropdownMenu");
+      if (unitMenu) unitMenu.classList.remove("open");
+      const unitList = document.getElementById("unitDropdownList");
+      if (unitList) unitList.innerHTML = "";
+      const chips = document.getElementById("selectedUnitChips");
+      if (chips) chips.innerHTML = "";
+      const unitMain = document.getElementById("unitDdMainText");
+      if (unitMain) unitMain.textContent = "Pilih item BOQ terlebih dahulu...";
+      const unitSub = document.getElementById("unitDdSubText");
+      if (unitSub) unitSub.textContent = "Status unit belum tersedia.";
+      const tagBadge = document.getElementById("nextBundleBadge");
+      if (tagBadge) {
+        tagBadge.textContent = "Kode Tag Fisik: belum tersedia";
+        tagBadge.dataset.tag = "";
+      }
+      const img = document.getElementById("inspRefImg");
+      if (img) { img.removeAttribute("src"); img.style.display = "none"; }
+      const fullLink = document.getElementById("inspRefFullLink");
+      if (fullLink) { fullLink.href = "#"; fullLink.style.display = "none"; }
+      const fallback = document.getElementById("inspRefImageFallback");
+      if (fallback) { fallback.style.display = "none"; }
+      document.getElementById("inspRefTitle").textContent = "-";
+      document.getElementById("inspRefMeta").textContent = "-";
+      document.getElementById("inspRefNote").textContent = "-";
+      document.getElementById("fInspCatatan").value = "";
+      const dependent = document.getElementById("inspectionItemDependentFields");
+      const notice = document.getElementById("inspectionNoBoqNotice");
+      if (dependent) dependent.style.display = "none";
+      if (notice) {
+        notice.style.display = "block";
+        notice.textContent = message || "Pilih Kode Item BOQ terlebih dahulu. Form input inspeksi, pemilihan unit, dan kamera akan aktif setelah item BOQ dipilih.";
+      }
+      const submitBtn = document.getElementById("btnSubmitInsp");
+      if (submitBtn) submitBtn.disabled = true;
+    }
+
     function onInspBuildingChange() {
       const bldg = document.getElementById("fInspBangunan").value;
       const welderWrap = document.getElementById("welderSelectWrap");
@@ -2658,15 +2766,36 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const kSel = document.getElementById("fInspKode");
       kSel.innerHTML = items.length === 0
         ? `<option value="">-- Belum ada item BOQ pada bangunan ini --</option>`
-        : items.map(it => `<option value="${it.kodeItem}">${it.kodeItem} — ${it.namaItem} (Target: ${it.target} ${it.satuan})</option>`).join("");
-      onInspItemChange();
+        : `<option value="">-- Pilih Kode Item BOQ --</option>` + items.map(it => `<option value="${it.kodeItem}">${it.kodeItem} — ${it.namaItem} (Target: ${it.target} ${it.satuan})</option>`).join("");
+      kSel.value = "";
+      clearInspectionItemSelection(items.length === 0
+        ? `Area ${bldg} belum memiliki item BOQ. Form input inspeksi dinonaktifkan sampai item BOQ dibuat pada menu Kelola BOQ & Doc Control.`
+        : "Pilih Kode Item BOQ terlebih dahulu. Form input inspeksi, pemilihan unit, dan kamera akan aktif setelah item BOQ dipilih.");
     }
 
     function onInspItemChange() {
       const bldg = document.getElementById("fInspBangunan").value;
       const kode = document.getElementById("fInspKode").value;
       const item = boqItems.find(b => b.bangunan === bldg && b.kodeItem === kode);
-      if (!item) return;
+      if (!item || !kode) {
+        const hasItems = boqItems.some(b => b.bangunan === bldg);
+        clearInspectionItemSelection(hasItems
+          ? "Pilih Kode Item BOQ terlebih dahulu. Form input inspeksi, pemilihan unit, dan kamera masih dinonaktifkan."
+          : `Area ${bldg} belum memiliki item BOQ. Form input inspeksi dinonaktifkan sampai item BOQ dibuat pada menu Kelola BOQ & Doc Control.`);
+        return;
+      }
+
+      const dependent = document.getElementById("inspectionItemDependentFields");
+      const notice = document.getElementById("inspectionNoBoqNotice");
+      if (dependent) dependent.style.display = "block";
+      if (notice) notice.style.display = "none";
+      selectedUnits.clear();
+      capturedPhotos.insp = "";
+      const preview = document.getElementById("inspPhotoPreview");
+      if (preview) { preview.removeAttribute("src"); preview.style.display = "none"; }
+      document.getElementById("fInspCatatan").value = "";
+      const submitBtn = document.getElementById("btnSubmitInsp");
+      if (submitBtn) submitBtn.disabled = false;
 
       setInspectionReferenceImage(item);
       document.getElementById("inspRefTitle").textContent = `${item.kodeItem} — ${item.namaItem}`;
@@ -2684,7 +2813,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       document.getElementById("nextBundleBadge").textContent = `Kode Tag Fisik Berikutnya: ${nextTag}`;
       document.getElementById("nextBundleBadge").dataset.tag = nextTag;
 
-      selectedUnits.clear();
       document.getElementById("unitSearchInp").value = "";
       document.getElementById("unitStatusFilter").value = "ALL";
       document.getElementById("unitRangeInp").value = "";
@@ -2693,6 +2821,9 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
 
     // ==================== UNIT DROPDOWN SELECTOR (REVISI LAMPIRAN 1) ====================
     function toggleUnitDropdown(forceState) {
+      const bldg = document.getElementById("fInspBangunan").value;
+      const kode = document.getElementById("fInspKode").value;
+      if (!boqItems.some(b => b.bangunan === bldg && b.kodeItem === kode)) return;
       const menu = document.getElementById("unitDropdownMenu");
       if (typeof forceState === "boolean") {
         menu.classList.toggle("open", forceState);
@@ -2735,7 +2866,11 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const bldg = document.getElementById("fInspBangunan").value;
       const kode = document.getElementById("fInspKode").value;
       const item = boqItems.find(b => b.bangunan === bldg && b.kodeItem === kode);
-      if (!item) return;
+      if (!item) {
+        document.getElementById("unitDropdownList").innerHTML = "";
+        document.getElementById("selectedUnitChips").innerHTML = "";
+        return;
+      }
 
       const total = Number(item.target) || 0;
       const statusMap = getUnitStatusMap(bldg, kode);
@@ -2759,45 +2894,26 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         if (stFilter === "SUDAH" && state !== "done") continue;
         if (stFilter === "REWORK" && state !== "rework") continue;
 
-        if (state === "done") {
+        if (state === "done" || state === "rework") {
+          const stateLabel = state === "rework" ? "Sudah input • Rework" : "Sudah diinput";
+          const tooltip = `${stateLabel} | Kode Tag: ${info.tag || "-"}`;
           listHtml += `
-            <div class="unit-dd-item disabled">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <input type="checkbox" checked disabled />
-                <strong>Unit #${numStr}</strong>
-                <span style="font-size:0.72rem; color:var(--slate-500);">(${info.tag})</span>
-              </div>
-              <span class="pill pill-green">Sudah di-QC (${info.approval})</span>
-            </div>
-          `;
-        } else if (state === "rework") {
-          listHtml += `
-            <div class="unit-dd-item disabled">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <input type="checkbox" disabled />
-                <strong>Unit #${numStr}</strong>
-                <span style="font-size:0.72rem; color:var(--slate-500);">(${info.tag})</span>
-              </div>
-              <span class="pill pill-red">Rework (NG)</span>
-            </div>
+            <button type="button" class="unit-dd-item disabled" disabled title="${tooltip}" aria-label="Unit ${numStr}, sudah pernah diinput dan terkunci">
+              <span class="unit-seat-number">${numStr}</span>
+            </button>
           `;
         } else {
           const isSel = selectedUnits.has(numStr);
           listHtml += `
-            <div class="unit-dd-item ${isSel ? 'selected' : ''}" onclick="toggleUnit('${numStr}')">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <input type="checkbox" ${isSel ? 'checked' : ''} onclick="event.stopPropagation(); toggleUnit('${numStr}')" />
-                <strong>Unit #${numStr}</strong>
-              </div>
-              <span class="pill ${isSel ? 'pill-blue' : 'pill-gray'}">${isSel ? 'Dipilih untuk QC' : 'Belum di-QC'}</span>
-            </div>
+            <button type="button" class="unit-dd-item ${isSel ? 'selected' : ''}" onclick="toggleUnit('${numStr}')" aria-pressed="${isSel}" title="${isSel ? 'Batalkan pilihan' : 'Pilih unit'} ${numStr}">
+              <span class="unit-seat-number">${numStr}</span>
+            </button>
           `;
         }
       }
 
-      document.getElementById("unitDropdownList").innerHTML = listHtml || `<div style="padding:12px; text-align:center; font-size:0.78rem; color:var(--slate-500);">Tidak ada unit yang sesuai filter.</div>`;
+      document.getElementById("unitDropdownList").innerHTML = listHtml || `<div style="grid-column:1/-1; padding:12px; text-align:center; font-size:0.78rem; color:var(--slate-500);">Tidak ada unit yang sesuai filter.</div>`;
 
-      // Update ringkasan trigger dropdown & chips
       const arr = Array.from(selectedUnits).sort();
       const mainTxt = document.getElementById("unitDdMainText");
       const subTxt = document.getElementById("unitDdSubText");
@@ -2807,7 +2923,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         const preview = arr.length <= 5 ? arr.join(", ") : `${arr[0]} s/d ${arr[arr.length - 1]}`;
         mainTxt.textContent = `${arr.length} ${item.satuan} Dipilih: ${preview}`;
       }
-      subTxt.textContent = `Total ${total} ${item.satuan}: ${cntSudah} Sudah di-QC | ${cntBelum} Belum di-QC${cntRework > 0 ? ` | ${cntRework} Rework` : ''}`;
+      subTxt.textContent = `Total ${total} ${item.satuan}: ${cntSudah + cntRework} Sudah diinput (terkunci) | ${cntBelum} Belum QC`;
 
       document.getElementById("selectedUnitChips").innerHTML = arr.map(u => `
         <span class="unit-chip" onclick="toggleUnit('${u}')" title="Klik untuk batal pilih">#${u} &times;</span>
@@ -3055,52 +3171,64 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const code = String(rawVal || "").trim().toUpperCase();
       if (!code) return;
       const fb = document.getElementById("papuaScanFeedback");
-
-      // QC Incoming menggunakan kecocokan persis Kode Tag Fisik agar tidak salah memilih bundle.
       const candidates = logs.filter(l =>
-        (l.statusTracking === "Dalam Pengiriman" || l.statusTracking === "Siap Kirim") &&
+        l.statusTracking === "Dalam Pengiriman" &&
         String(l.tagBundel || "").trim().toUpperCase() === code
       );
-
       document.getElementById("papuaBarcodeInput").value = "";
 
       if (candidates.length === 1) {
         const targetLog = candidates[0];
         fb.className = "scan-feedback ok";
-        fb.textContent = `Tagging fisik "${targetLog.tagBundel}" (${targetLog.kodeItem}) ditemukan! Membuka form QC Incoming Papua...`;
+        fb.textContent = `Kode Tag Fisik ${targetLog.tagBundel} cocok. Silakan konfirmasi penerimaan material.`;
         openPapuaIncomingModal(targetLog.idLog);
-      } else if (candidates.length > 1) {
-        papuaScanQuery = code;
-        document.getElementById("btnResetPapuaScan").style.display = "inline-flex";
-        fb.className = "scan-feedback err";
-        fb.textContent = `Ditemukan lebih dari satu record dengan Kode Tag Fisik "${code}". Periksa data duplikat pada database sebelum melanjutkan.`;
-        renderPapuaTracking();
-      } else {
-        // Cek apakah sudah pernah di-QC Incoming sebelumnya
-        const alreadyDone = logs.find(l =>
-          l.statusTracking === "QC Incoming Papua" &&
-          (String(l.tagBundel || "").toUpperCase() === code || String(l.kodeItem || "").toUpperCase() === code)
-        );
-        if (alreadyDone) {
-          fb.className = "scan-feedback err";
-          fb.textContent = `Tagging "${code}" (${alreadyDone.tagBundel}) SUDAH tercatat diterima QC Incoming Papua pada ${alreadyDone.tglTerimaPapua}.`;
-        } else {
-          fb.className = "scan-feedback err";
-          fb.textContent = `Tagging fisik "${code}" tidak ditemukan dalam daftar pengiriman aktif ke Papua.`;
-        }
+        return;
       }
+      if (candidates.length > 1) {
+        fb.className = "scan-feedback err";
+        fb.textContent = `Kode Tag Fisik ${code} ditemukan lebih dari satu kali. Periksa duplikasi pada database sebelum QC Incoming.`;
+        return;
+      }
+
+      const alreadyDone = logs.find(l =>
+        l.statusTracking === "QC Incoming Papua" &&
+        String(l.tagBundel || "").trim().toUpperCase() === code
+      );
+      if (alreadyDone) {
+        fb.className = "scan-feedback err";
+        fb.textContent = `Kode Tag Fisik ${code} sudah tercatat diterima pada ${alreadyDone.tglTerimaPapua || "tanggal yang tersimpan"}.`;
+        return;
+      }
+
+      const readyButNotShipped = logs.find(l =>
+        l.statusTracking === "Siap Kirim" &&
+        String(l.tagBundel || "").trim().toUpperCase() === code
+      );
+      fb.className = "scan-feedback err";
+      fb.textContent = readyButNotShipped
+        ? `Kode ${code} belum berstatus Dalam Pengiriman. Catat keberangkatan terlebih dahulu pada menu Pengiriman Material.`
+        : `Kode Tag Fisik ${code} tidak ditemukan pada daftar material yang sedang dalam pengiriman.`;
     }
 
     function resetPapuaScanFilter() {
-      papuaScanQuery = "";
-      document.getElementById("btnResetPapuaScan").style.display = "none";
-      document.getElementById("papuaScanFeedback").className = "scan-feedback";
-      renderPapuaTracking();
+      const input = document.getElementById("papuaBarcodeInput");
+      if (input) input.value = "";
+      const fb = document.getElementById("papuaScanFeedback");
+      if (fb) { fb.className = "scan-feedback"; fb.textContent = ""; }
+      renderPapuaIncomingTracking();
     }
 
     // ==================== SUBMIT INSPECTION FORM ====================
     async function submitInspectionForm(e) {
       e.preventDefault();
+      const bldg = document.getElementById("fInspBangunan").value;
+      const kode = document.getElementById("fInspKode").value;
+      const item = boqItems.find(b => b.bangunan === bldg && b.kodeItem === kode);
+      const tagBundel = document.getElementById("nextBundleBadge").dataset.tag;
+      if (!item || !kode || !tagBundel) {
+        alert("Inspeksi tidak dapat disimpan karena area ini belum memiliki atau belum memilih Item BOQ yang valid.");
+        return;
+      }
       const unitsArr = Array.from(selectedUnits).sort();
       if (unitsArr.length === 0) {
         alert("Silakan pilih minimal 1 nomor unit pada dropdown pilihan unit terlebih dahulu!");
@@ -3115,10 +3243,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       btn.disabled = true;
       btn.textContent = "Menyimpan & Mengunggah Foto...";
 
-      const bldg = document.getElementById("fInspBangunan").value;
-      const kode = document.getElementById("fInspKode").value;
-      const item = boqItems.find(b => b.bangunan === bldg && b.kodeItem === kode);
-      const tagBundel = document.getElementById("nextBundleBadge").dataset.tag;
       const statusQc = document.getElementById("fInspStatusQc").value;
       const minggu = "-";
       const catatan = document.getElementById("fInspCatatan").value.trim();
@@ -3494,7 +3618,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
 
       renderInspectionTables();
       renderDashboard();
-      renderPapuaTracking();
+      renderShippingTracking();
+      renderPapuaIncomingTracking();
       renderGuestDataTable();
       renderSidebarNav();
       alert("Log inspeksi berhasil dihapus dari database.");
@@ -3661,62 +3786,44 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       badge.textContent = `Terpilih: ${selectedShipIds.size} Kode Tag Fisik (${formatWeightPlain(totalKg)})`;
     }
 
-    function renderPapuaTracking() {
-      const sLogs = getScopedLogs().filter(l => l.statusApproval === "Approved" || l.statusTracking === "Dalam Pengiriman" || l.statusTracking === "QC Incoming Papua");
-      const stageFilter = document.getElementById("filterTrackingStage").value;
+    function renderShippingTracking() {
+      const scopedLogs = getScopedLogs();
+      const trackedLogs = scopedLogs.filter(l =>
+        l.statusApproval === "Approved" || l.statusTracking === "Dalam Pengiriman" || l.statusTracking === "QC Incoming Papua"
+      );
+      const stageFilter = document.getElementById("filterShippingStage").value;
+      const cSiap = trackedLogs.filter(l => l.statusTracking === "Siap Kirim").length;
+      const cShip = trackedLogs.filter(l => l.statusTracking === "Dalam Pengiriman").length;
+      const cPapua = trackedLogs.filter(l => l.statusTracking === "QC Incoming Papua").length;
 
       document.getElementById("papuaKpiGrid").style.display = isManagerRole() ? "grid" : "none";
-
-      const cSiap = sLogs.filter(l => l.statusTracking === "Siap Kirim").length;
-      const cShip = sLogs.filter(l => l.statusTracking === "Dalam Pengiriman").length;
-      const cPapua = sLogs.filter(l => l.statusTracking === "QC Incoming Papua").length;
-
       document.getElementById("cntSiapKirim").textContent = cSiap;
       document.getElementById("cntShipping").textContent = cShip;
       document.getElementById("cntPapuaDone").textContent = cPapua;
-
       document.getElementById("btnBatchShipping").style.display = currentUser.bisaInput ? "inline-flex" : "none";
       updateSelectedShipWeightUI();
 
-      const filtered = sLogs.filter(l => {
-        if (stageFilter !== "ALL" && l.statusTracking !== stageFilter) return false;
-        if (papuaScanQuery) {
-          const match = String(l.tagBundel || "").toUpperCase().includes(papuaScanQuery) || String(l.kodeItem || "").toUpperCase().includes(papuaScanQuery);
-          if (!match) return false;
-        }
-        return true;
-      });
+      const shippingLogs = trackedLogs.filter(l =>
+        l.statusTracking === "Siap Kirim" || l.statusTracking === "Dalam Pengiriman"
+      ).filter(l => stageFilter === "ALL" || l.statusTracking === stageFilter);
 
-      document.getElementById("trackingTableBody").innerHTML = filtered.length === 0
-        ? `<tr><td colspan="17" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada material Approved yang siap dikirim atau sedang dalam tracking.</td></tr>`
-        : filtered.map(l => {
-          const isSiap = l.statusTracking === "Siap Kirim";
-          const isShip = l.statusTracking === "Dalam Pengiriman";
-          const isDone = l.statusTracking === "QC Incoming Papua";
+      document.getElementById("shippingTableBody").innerHTML = shippingLogs.length === 0
+        ? `<tr><td colspan="14" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada material yang siap dikirim atau sedang dalam pengiriman.</td></tr>`
+        : shippingLogs.map(l => {
+          const isReady = l.statusTracking === "Siap Kirim";
           const totalBerat = getBundleWeightKg(l);
-
-          let statusTracking = `<span class="pill pill-green">Siap Kirim (Approved Jakarta)</span>`;
-          if (isShip) statusTracking = `<span class="pill pill-blue">Dalam Pengiriman</span>`;
-          if (isDone) statusTracking = `<span class="pill pill-purple">QC Incoming Papua</span>`;
-
-          let actionBtn = `<span style="font-size:0.72rem; color:var(--slate-500);">Selesai</span>`;
-          if (currentUser.bisaInput) {
-            if (isSiap) {
-              actionBtn = `
-                <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
-                  <button class="btn btn-primary btn-sm" onclick="openSingleShipping('${l.idLog}')">Kirim</button>
-                  <button class="btn btn-success btn-sm" onclick="openPapuaIncomingModal('${l.idLog}')">QC Papua</button>
-                </div>`;
-            } else if (isShip) {
-              actionBtn = `<button class="btn btn-success btn-sm" onclick="openPapuaIncomingModal('${l.idLog}')">QC Incoming Papua</button>`;
-            }
-          } else {
-            actionBtn = `<span style="font-size:0.72rem; color:var(--slate-400);">View Only</span>`;
+          const status = isReady
+            ? `<span class="pill pill-green">Siap Kirim (Approved Jakarta)</span>`
+            : `<span class="pill pill-blue">Dalam Pengiriman</span>`;
+          let action = `<span style="font-size:0.72rem; color:var(--slate-500);">Dalam perjalanan</span>`;
+          if (isReady && currentUser.bisaInput) {
+            action = `<button class="btn btn-primary btn-sm" onclick="openSingleShipping('${l.idLog}')">Input Kirim</button>`;
+          } else if (isReady) {
+            action = `<span style="font-size:0.72rem; color:var(--slate-400);">Menunggu pengiriman</span>`;
           }
-
           return `
             <tr>
-              <td>${isSiap && currentUser.bisaInput ? `<input type="checkbox" class="ship-chk" value="${l.idLog}" ${selectedShipIds.has(l.idLog) ? 'checked' : ''} onchange="toggleShipCheck('${l.idLog}', this.checked)" />` : ""}</td>
+              <td>${isReady && currentUser.bisaInput ? `<input type="checkbox" class="ship-chk" value="${l.idLog}" ${selectedShipIds.has(l.idLog) ? 'checked' : ''} onchange="toggleShipCheck('${l.idLog}', this.checked)" />` : ""}</td>
               <td><span class="tag-code">${l.tagBundel || "-"}</span></td>
               <td>${l.bangunan || "-"}</td>
               <td><strong>${l.kodeItem || "-"}</strong></td>
@@ -3724,15 +3831,55 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
               <td>${l.unitList || "-"}</td>
               <td class="text-right">${Number(l.qty) || 0}</td>
               <td class="text-right">${formatWeightPlain(totalBerat)}</td>
-              <td>${statusTracking}</td>
+              <td>${status}</td>
               <td>${l.noKontainer || "-"}</td>
               <td>${l.tglBerangkat || "-"}</td>
               <td>${l.estimasiTiba || "-"}</td>
-              <td>${l.kondisiPapua || "-"}</td>
-              <td>${l.tglTerimaPapua || "-"}</td>
-              <td>${l.catatanPapua || "-"}</td>
               <td class="text-center"><button class="btn btn-light btn-sm" onclick="openPhotoTrail('${l.idLog}')">Jejak Foto</button></td>
-              <td class="text-center">${actionBtn}</td>
+              <td class="text-center">${action}</td>
+            </tr>
+          `;
+        }).join("");
+
+      const chkAll = document.getElementById("chkAllShip");
+      if (chkAll) chkAll.checked = shippingLogs.length > 0 && shippingLogs.every(l => l.statusTracking !== "Siap Kirim" || selectedShipIds.has(l.idLog));
+    }
+
+    function renderPapuaIncomingTracking() {
+      const stageFilter = document.getElementById("filterPapuaIncomingStage").value;
+      const incomingLogs = getScopedLogs().filter(l =>
+        l.statusTracking === "Dalam Pengiriman" || l.statusTracking === "QC Incoming Papua"
+      ).filter(l => stageFilter === "ALL" || l.statusTracking === stageFilter);
+
+      document.getElementById("papuaIncomingTableBody").innerHTML = incomingLogs.length === 0
+        ? `<tr><td colspan="14" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada material yang menunggu atau sudah menjalani QC Incoming Papua.</td></tr>`
+        : incomingLogs.map(l => {
+          const inTransit = l.statusTracking === "Dalam Pengiriman";
+          const status = inTransit
+            ? `<span class="pill pill-blue">Menunggu QC Incoming</span>`
+            : `<span class="pill pill-purple">Sudah Diterima</span>`;
+          let action = `<span style="font-size:0.72rem; color:var(--slate-500);">Selesai</span>`;
+          if (inTransit && currentUser.bisaInput) {
+            action = `<button class="btn btn-success btn-sm" onclick="openPapuaIncomingModal('${l.idLog}')">Konfirmasi QC Incoming</button>`;
+          } else if (inTransit) {
+            action = `<span style="font-size:0.72rem; color:var(--slate-400);">Menunggu QC</span>`;
+          }
+          return `
+            <tr>
+              <td><span class="tag-code">${l.tagBundel || "-"}</span></td>
+              <td>${l.bangunan || "-"}</td>
+              <td><strong>${l.kodeItem || "-"}</strong></td>
+              <td>${l.namaItem || "-"}</td>
+              <td>${l.unitList || "-"}</td>
+              <td class="text-right">${Number(l.qty) || 0}</td>
+              <td>${l.noKontainer || "-"}</td>
+              <td>${l.tglBerangkat || "-"}</td>
+              <td>${l.estimasiTiba || "-"}</td>
+              <td>${status}</td>
+              <td>${l.tglTerimaPapua || "-"}</td>
+              <td>${l.kondisiPapua || "-"}</td>
+              <td>${l.catatanPapua || "-"}</td>
+              <td class="text-center">${action}</td>
             </tr>
           `;
         }).join("");
@@ -3779,9 +3926,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       document.getElementById("shipNoKontainer").value = "";
       document.getElementById("shipTglBerangkat").value = new Date().toISOString().split("T")[0];
       document.getElementById("shipEstimasi").value = "";
-      capturedPhotos.shipping = "";
-      const prev = document.getElementById("shipPhotoPreview");
-      prev.src = ""; prev.style.display = "none";
       document.getElementById("shippingModal").classList.add("show");
     }
 
@@ -3790,7 +3934,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const tglBrkt = document.getElementById("shipTglBerangkat").value;
       const est = document.getElementById("shipEstimasi").value;
       if (!noCont) { alert("Nomor Kontainer / Surat Jalan wajib diisi."); return; }
-      if (!capturedPhotos.shipping) { alert("Wajib mengambil foto loading / segel kontainer."); return; }
 
       const btn = document.getElementById("btnSubmitShip");
       btn.disabled = true; btn.textContent = "Menyimpan...";
@@ -3803,7 +3946,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           logs[idx].noKontainer = noCont;
           logs[idx].tglBerangkat = tglBrkt;
           logs[idx].estimasiTiba = est;
-          logs[idx].fotoShipping = capturedPhotos.shipping;
         }
       });
 
@@ -3817,8 +3959,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
               idLogs: idArr,
               noKontainer: noCont,
               tglBerangkat: tglBrkt,
-              estimasiTiba: est,
-              fotoBase64: capturedPhotos.shipping
+              estimasiTiba: est
             })
           });
           const data = await res.json();
@@ -3835,7 +3976,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       saveLocalAll();
       btn.disabled = false; btn.textContent = "Simpan Data Pengiriman";
       closeModal("shippingModal");
-      renderPapuaTracking();
+      renderShippingTracking();
+      renderPapuaIncomingTracking();
     }
 
     function openPapuaIncomingModal(idLog) {
@@ -3901,7 +4043,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       saveLocalAll();
       btn.disabled = false; btn.textContent = "Konfirmasi Penerimaan";
       closeModal("papuaModal");
-      renderPapuaTracking();
+      renderPapuaIncomingTracking();
+      renderShippingTracking();
     }
 
     // ==================== IN-APP LIVE CAMERA & AUTO-WATERMARK ====================
@@ -4479,45 +4622,62 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
 
     // ==================== MENU 5: CETAK PDF BERBASIS BOQ ====================
     function buildBoqReportHtml() {
-      const sBoq = getScopedBoq();
-      const sLogs = getScopedLogs();
+      const reportFilter = document.getElementById("reportStatusFilter")?.value || "ALL";
+      const statusLabels = {
+        ALL: "Semua Status",
+        APPROVED: "Sudah Approved Jakarta",
+        UNAPPROVED: "Belum Approved",
+        SHIPPING: "Sedang Dalam Pengiriman",
+        ARRIVED: "Sudah Tiba di Papua"
+      };
+      const statusLabel = statusLabels[reportFilter] || statusLabels.ALL;
       const areaTitle = activeBuilding === "Gabungan" ? "SEMUA AREA BANGUNAN (GABUNGAN)" : `BANGUNAN ${activeBuilding.toUpperCase()}`;
       const today = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+      const scopedLogs = getScopedLogs();
+      const sLogs = scopedLogs.filter(l => {
+        if (reportFilter === "APPROVED") return l.statusApproval === "Approved";
+        if (reportFilter === "UNAPPROVED") return l.statusApproval !== "Approved";
+        if (reportFilter === "SHIPPING") return l.statusTracking === "Dalam Pengiriman";
+        if (reportFilter === "ARRIVED") return l.statusTracking === "QC Incoming Papua";
+        return true;
+      });
+      const reportBoq = reportFilter === "ALL"
+        ? getScopedBoq()
+        : getScopedBoq().filter(b => sLogs.some(l => l.bangunan === b.bangunan && l.kodeItem === b.kodeItem));
 
       let sumTargetBerat = 0;
-
-      const boqRows = sBoq.map((b, idx) => {
-        const iLogs = sLogs.filter(l => l.bangunan === b.bangunan && l.kodeItem === b.kodeItem);
-        const okQty = iLogs.filter(l => l.statusQc === "OK").reduce((s, l) => s + Number(l.qty || 0), 0);
-        const appQty = iLogs.filter(l => l.statusApproval === "Approved").reduce((s, l) => s + Number(l.qty || 0), 0);
-        const shipQty = iLogs.filter(l => l.statusTracking === "Dalam Pengiriman" || l.statusTracking === "QC Incoming Papua").reduce((s, l) => s + Number(l.qty || 0), 0);
-        const papuaQty = iLogs.filter(l => l.statusTracking === "QC Incoming Papua").reduce((s, l) => s + Number(l.qty || 0), 0);
-        const sisa = Math.max(0, Number(b.target) - okQty);
-        const pct = b.target > 0 ? Math.round((appQty / b.target) * 100) : 0;
-
-        const bSatuan = Number(b.beratSatuan) || 0;
-        const totBerat = bSatuan * Number(b.target || 0);
-        sumTargetBerat += totBerat;
-
-        return `
-          <tr>
-            <td style="text-align:center;">${idx + 1}</td>
-            <td><strong>${b.kodeItem}</strong><br><small style="color:#475569;">${b.bangunan}</small></td>
-            <td>${b.namaItem}</td>
-            <td style="text-align:right;">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "-"}</td>
-            <td style="text-align:right;"><strong>${b.target}</strong> ${b.satuan}</td>
-            <td style="text-align:right;">${totBerat > 0 ? formatWeightPlain(totBerat) : "-"}</td>
-            <td style="text-align:right;">${okQty}</td>
-            <td style="text-align:right;"><strong>${appQty}</strong></td>
-            <td style="text-align:right;">${shipQty} / ${papuaQty}</td>
-            <td style="text-align:right;">${sisa}</td>
-            <td style="text-align:center;"><strong>${pct}%</strong></td>
-          </tr>
-        `;
-      }).join("");
+      const boqRows = reportBoq.length === 0
+        ? `<tr><td colspan="11" style="text-align:center; color:#64748b; padding:10px;">Tidak ada item BOQ dengan status yang dipilih.</td></tr>`
+        : reportBoq.map((b, idx) => {
+          const iLogs = sLogs.filter(l => l.bangunan === b.bangunan && l.kodeItem === b.kodeItem);
+          const okQty = iLogs.filter(l => l.statusQc === "OK").reduce((sum, l) => sum + Number(l.qty || 0), 0);
+          const appQty = iLogs.filter(l => l.statusApproval === "Approved").reduce((sum, l) => sum + Number(l.qty || 0), 0);
+          const shipQty = iLogs.filter(l => l.statusTracking === "Dalam Pengiriman" || l.statusTracking === "QC Incoming Papua").reduce((sum, l) => sum + Number(l.qty || 0), 0);
+          const papuaQty = iLogs.filter(l => l.statusTracking === "QC Incoming Papua").reduce((sum, l) => sum + Number(l.qty || 0), 0);
+          const sisa = Math.max(0, Number(b.target) - okQty);
+          const pct = b.target > 0 ? Math.round((appQty / b.target) * 100) : 0;
+          const bSatuan = Number(b.beratSatuan) || 0;
+          const totBerat = bSatuan * Number(b.target || 0);
+          sumTargetBerat += totBerat;
+          return `
+            <tr>
+              <td style="text-align:center;">${idx + 1}</td>
+              <td><strong>${b.kodeItem}</strong><br><small style="color:#475569;">${b.bangunan}</small></td>
+              <td>${b.namaItem}</td>
+              <td style="text-align:right;">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "-"}</td>
+              <td style="text-align:right;"><strong>${b.target}</strong> ${b.satuan}</td>
+              <td style="text-align:right;">${totBerat > 0 ? formatWeightPlain(totBerat) : "-"}</td>
+              <td style="text-align:right;">${okQty}</td>
+              <td style="text-align:right;"><strong>${appQty}</strong></td>
+              <td style="text-align:right;">${shipQty} / ${papuaQty}</td>
+              <td style="text-align:right;">${sisa}</td>
+              <td style="text-align:center;"><strong>${pct}%</strong></td>
+            </tr>
+          `;
+        }).join("");
 
       const bundleRows = sLogs.length === 0
-        ? `<tr><td colspan="13" style="text-align:center; color:#64748b; padding:10px;">Belum ada rincian Kode Tag Fisik tercatat.</td></tr>`
+        ? `<tr><td colspan="13" style="text-align:center; color:#64748b; padding:10px;">Tidak ada rincian Kode Tag Fisik untuk status yang dipilih.</td></tr>`
         : sLogs.map((l, idx) => `
           <tr>
             <td style="text-align:center;">${idx + 1}</td>
@@ -4538,8 +4698,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
 
       return `
         <div class="p-head">
-          <h2>BERITA ACARA PROGRES QA/QC FABRIKASI &amp; TRACKING MATERIAL (BERBASIS BOQ)</h2>
-          <p><strong>Proyek:</strong> Temporary Utility — LNG Tangguh &nbsp;|&nbsp; <strong>Area:</strong> ${areaTitle} &nbsp;|&nbsp; <strong>Tanggal Cetak:</strong> ${today}</p>
+          <h2>QA/QC FABRICATION &amp; MATERIAL TRACKING PROGRESS REPORT</h2>
+          <p><strong>Proyek:</strong> Temporary Utility — LNG Tangguh &nbsp;|&nbsp; <strong>Area:</strong> ${areaTitle} &nbsp;|&nbsp; <strong>Filter Status:</strong> ${statusLabel} &nbsp;|&nbsp; <strong>Tanggal Cetak:</strong> ${today}</p>
         </div>
 
         <div class="p-sec-title">1. Rekapitulasi Capaian Berdasarkan Daftar Item BOQ</div>
