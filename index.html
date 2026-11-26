@@ -462,9 +462,32 @@
       margin-bottom: 14px;
     }
     @media (max-width: 640px) { .doc-ref-box { grid-template-columns: 1fr; } }
+    .doc-ref-image-wrap { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
     .doc-ref-img {
-      width: 100%; height: 130px; object-fit: contain; background: #fff;
-      border: 1px solid #cbd5e1; border-radius: 7px; padding: 4px;
+      width: 100%; height: 210px; object-fit: contain; object-position: center;
+      background: #fff; border: 1px solid #cbd5e1; border-radius: 7px; padding: 5px;
+      cursor: zoom-in;
+    }
+    .doc-control-image-wrap { width: 100%; min-width: 0; margin-bottom: 8px; }
+    .doc-control-image {
+      display: block; width: 100%; height: 230px; object-fit: contain; object-position: center;
+      background: #fff; border: 1px solid var(--border); border-radius: 7px; padding: 5px;
+      cursor: zoom-in;
+    }
+    .image-load-fallback {
+      display: none; padding: 12px; border: 1px dashed var(--border); border-radius: 7px;
+      background: var(--slate-50); color: var(--slate-600); font-size: 0.76rem; text-align: center;
+    }
+    .image-full-link { display: inline-block; color: var(--blue); font-size: 0.75rem; font-weight: 700; text-decoration: underline; }
+    .boq-image-preview-wrap { display: none; margin-top: 8px; }
+    .boq-image-preview {
+      display: block; width: 100%; max-height: 320px; object-fit: contain; object-position: center;
+      background: #fff; border: 1px solid var(--border); border-radius: 7px; padding: 5px;
+    }
+    .boq-image-preview-status { margin-top: 5px; color: var(--slate-500); font-size: 0.72rem; }
+    @media (max-width: 640px) {
+      .doc-ref-img { height: 190px; }
+      .doc-control-image { height: 200px; }
     }
 
     /* ================= IN-APP LIVE CAMERA (ZERO GALLERY STORAGE) ================= */
@@ -876,7 +899,11 @@
 
                 <!-- PREVIEW LINEAR DARI DOCUMENT CONTROL -->
                 <div class="doc-ref-box" id="inspDocPreview">
-                  <img id="inspRefImg" class="doc-ref-img" src="" alt="Referensi Gambar" />
+                  <div class="doc-ref-image-wrap">
+                    <img id="inspRefImg" class="doc-ref-img" src="" alt="Referensi Gambar" onclick="openReferenceImageFull()" onerror="handleReferenceImageError(this)" />
+                    <div id="inspRefImageFallback" class="image-load-fallback">Gambar referensi tidak dapat dimuat pada pratinjau ini.</div>
+                    <a id="inspRefFullLink" class="image-full-link" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">Buka Gambar Referensi Ukuran Penuh ↗</a>
+                  </div>
                   <div>
                     <div style="font-size:0.72rem; font-weight:800; color:var(--blue-dark); text-transform:uppercase;">Referensi Standar Document Control</div>
                     <div id="inspRefTitle" style="font-size:0.92rem; font-weight:800; color:var(--navy); margin:2px 0;">-</div>
@@ -1420,7 +1447,12 @@
       <div class="form-group">
         <label class="form-label">Upload Gambar Referensi / Potongan Shop Drawing (Opsional)</label>
         <input type="file" id="bFileImg" accept="image/*" class="form-control" onchange="handleBoqDocImage(event)" />
-        <img id="bImgPreview" src="" alt="Preview Dokumen" style="max-height:130px; margin-top:8px; display:none; border-radius:6px; border:1px solid var(--border);" />
+        <div id="bImgPreviewWrap" class="boq-image-preview-wrap">
+          <img id="bImgPreview" class="boq-image-preview" src="" alt="Preview Dokumen" onerror="handleBoqPreviewError(this)" />
+          <div id="bImgPreviewFallback" class="image-load-fallback">Pratinjau gambar tidak dapat dimuat. Gunakan tautan ukuran penuh untuk membuka file.</div>
+          <a id="bImgFullLink" class="image-full-link" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">Buka Gambar Ukuran Penuh ↗</a>
+          <div id="bImgPreviewStatus" class="boq-image-preview-status"></div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-light" onclick="closeModal('boqModal')">Batal</button>
@@ -2500,7 +2532,9 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       `;
 
       document.getElementById("docControlCards").innerHTML = sBoq.map(b => {
-        const imgSrc = b.gambarUrl || getDefaultSchematicSvg(b.kodeItem, b.warna);
+        const rawImg = b.gambarUrl || getDefaultSchematicSvg(b.kodeItem, b.warna);
+        const imgSrc = getPhotoPreviewUrl(rawImg) || rawImg;
+        const fullImg = b.gambarFullUrl || getPhotoFullUrl(rawImg);
         const totalBerat = (Number(b.beratSatuan) || 0) * Number(b.target || 0);
         return `
           <div class="card" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between;">
@@ -2509,7 +2543,11 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
                 <span class="pill ${b.bangunan === 'Office' ? 'pill-blue' : 'pill-purple'}">${b.bangunan} • ${b.kodeItem}</span>
                 ${renderColorBadge(b.warna)}
               </div>
-              <img src="${imgSrc}" alt="${b.kodeItem}" style="width:100%; height:145px; object-fit:contain; background:#f8fafc; border:1px solid var(--border); border-radius:7px; margin-bottom:8px;" />
+              <div class="doc-control-image-wrap">
+                <img class="doc-control-image" src="${imgSrc}" data-original-url="${/^https?:\/\//i.test(String(rawImg || '')) ? encodeURIComponent(String(rawImg)) : ''}" data-full-url="${fullImg ? encodeURIComponent(String(fullImg)) : ''}" alt="${b.kodeItem}" onclick="openImageFullFromElement(this)" onerror="handleReferenceImageError(this)" loading="lazy" />
+                <div class="image-load-fallback">Gambar referensi tidak dapat dimuat pada pratinjau. Periksa izin file Google Drive.</div>
+                ${fullImg ? `<a class="image-full-link" href="${fullImg}" target="_blank" rel="noopener noreferrer">Buka Gambar Ukuran Penuh ↗</a>` : ""}
+              </div>
               <div style="font-weight:800; font-size:0.9rem; color:var(--navy);">${b.namaItem}</div>
               <div style="font-size:0.75rem; color:var(--slate-600); margin:3px 0 6px;">
                 Dimensi: <strong>${b.dimensi || "Belum diisi"}</strong><br />
@@ -2630,7 +2668,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const item = boqItems.find(b => b.bangunan === bldg && b.kodeItem === kode);
       if (!item) return;
 
-      document.getElementById("inspRefImg").src = item.gambarUrl || getDefaultSchematicSvg(item.kodeItem, item.warna);
+      setInspectionReferenceImage(item);
       document.getElementById("inspRefTitle").textContent = `${item.kodeItem} — ${item.namaItem}`;
       const warnaLabel = item.warna || "Belum Ditentukan / Tanpa Warna";
       document.getElementById("inspRefMeta").textContent = `Bangunan: ${item.bangunan} | Dimensi: ${item.dimensi || "Belum diisi"} | Warna Modul: ${warnaLabel} | Target BOQ: ${item.target} ${item.satuan}`;
@@ -4028,11 +4066,42 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       document.getElementById("bTotalWeightHint").textContent = `Total Berat BOQ: ${formatWeightPlain(totalKg)}`;
     }
 
+    function setBoqModalImagePreview(rawUrl, statusText) {
+      const wrap = document.getElementById("bImgPreviewWrap");
+      const img = document.getElementById("bImgPreview");
+      const fallback = document.getElementById("bImgPreviewFallback");
+      const fullLink = document.getElementById("bImgFullLink");
+      const status = document.getElementById("bImgPreviewStatus");
+      const raw = String(rawUrl || "").trim();
+      // Jangan menaruh Base64 besar ke atribut DOM; hanya simpan URL web untuk fallback.
+      img.dataset.originalUrl = /^https?:\/\//i.test(raw) ? encodeURIComponent(raw) : "";
+      img.dataset.retryStage = "0";
+      fallback.style.display = "none";
+      status.textContent = statusText || "";
+      if (!raw) {
+        wrap.style.display = "none";
+        img.removeAttribute("src");
+        fullLink.style.display = "none";
+        fullLink.removeAttribute("href");
+        return;
+      }
+      wrap.style.display = "block";
+      img.style.display = "block";
+      img.src = getPhotoPreviewUrl(raw) || raw;
+      const fullUrl = getPhotoFullUrl(raw);
+      if (fullUrl) {
+        fullLink.href = fullUrl;
+        fullLink.style.display = "inline-block";
+      } else {
+        fullLink.style.display = "none";
+        fullLink.removeAttribute("href");
+      }
+    }
+
     function openBoqModal(idItem) {
       capturedPhotos.boqDoc = "";
-      const imgPrev = document.getElementById("bImgPreview");
-      imgPrev.style.display = "none";
       document.getElementById("bFileImg").value = "";
+      setBoqModalImagePreview("", "");
 
       populateBuildingSelect("bBangunan", activeBuilding !== "Gabungan" ? activeBuilding : buildingList[0].name);
 
@@ -4043,26 +4112,18 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         document.getElementById("bIdItem").value = b.idItem;
         document.getElementById("bBangunan").value = b.bangunan;
         document.getElementById("bKode").value = b.kodeItem;
-        // Kode warna dipertahankan dari data existing, tetapi tidak lagi diedit melalui form.
         document.getElementById("bNama").value = b.namaItem;
         document.getElementById("bDimensi").value = b.dimensi || "";
         document.getElementById("bSatuan").value = b.satuan;
         document.getElementById("bTarget").value = b.target;
         document.getElementById("bBerat").value = Number(b.beratSatuan) || 0;
-        // Rencana mingguan lama tetap dipertahankan tanpa field input pada form.
         document.getElementById("bCatatan").value = b.catatanStandar || "";
-        if (b.gambarUrl) {
-          imgPrev.src = b.gambarUrl;
-          imgPrev.style.display = "block";
-        }
+        if (b.gambarUrl) setBoqModalImagePreview(b.gambarUrl, "Gambar referensi tersimpan di Google Drive.");
       } else {
         document.getElementById("boqModalTitle").textContent = "Tambah Item Material BOQ Baru";
         document.getElementById("bIdItem").value = "BOQ-" + Date.now();
-        if (activeBuilding !== "Gabungan") {
-          document.getElementById("bBangunan").value = activeBuilding;
-        }
+        if (activeBuilding !== "Gabungan") document.getElementById("bBangunan").value = activeBuilding;
         document.getElementById("bKode").value = "";
-
         document.getElementById("bNama").value = "";
         document.getElementById("bDimensi").value = "";
         document.getElementById("bSatuan").value = "Batang";
@@ -4075,22 +4136,63 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
     }
 
     function handleBoqDocImage(event) {
-      const file = event.target.files[0];
+      const file = event && event.target && event.target.files ? event.target.files[0] : null;
       if (!file) return;
+      if (!/^image\/(jpeg|jpg|png|webp)$/i.test(file.type || "")) {
+        alert("Format gambar belum didukung. Gunakan JPG, JPEG, PNG, atau WEBP.");
+        event.target.value = "";
+        return;
+      }
+      if (file.size > 25 * 1024 * 1024) {
+        alert("Ukuran file terlalu besar (maksimal 25 MB sebelum kompresi). Pilih file yang lebih kecil.");
+        event.target.value = "";
+        return;
+      }
+
       const reader = new FileReader();
+      reader.onerror = () => alert("File gambar gagal dibaca oleh browser. Silakan pilih ulang gambar.");
       reader.onload = e => {
         const img = new Image();
+        img.onerror = () => alert("Browser tidak dapat membaca gambar ini. Simpan ulang sebagai JPG atau PNG, lalu upload kembali.");
         img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const maxW = 900;
-          let w = img.width, h = img.height;
-          if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
-          canvas.width = w; canvas.height = h;
-          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-          capturedPhotos.boqDoc = canvas.toDataURL("image/jpeg", 0.8);
-          const prev = document.getElementById("bImgPreview");
-          prev.src = capturedPhotos.boqDoc;
-          prev.style.display = "block";
+          try {
+            const canvas = document.createElement("canvas");
+            const maxDimension = 2400;
+            const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+            const w = Math.max(1, Math.round(img.width * scale));
+            const h = Math.max(1, Math.round(img.height * scale));
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d", { alpha: file.type === "image/png" });
+            if (!ctx) throw new Error("Canvas gambar tidak dapat dibuat.");
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = "high";
+            ctx.fillStyle = "#ffffff";
+            if (file.type !== "image/png") ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+
+            // PNG dipertahankan untuk gambar teknik/garis; foto JPG/WEBP dikonversi ke JPEG kualitas tinggi.
+            const outputType = file.type === "image/png" ? "image/png" : "image/jpeg";
+            let imageData = outputType === "image/png" ? canvas.toDataURL(outputType) : canvas.toDataURL(outputType, 0.92);
+            if (imageData.length > 16 * 1024 * 1024) {
+              const reducedCanvas = document.createElement("canvas");
+              const reduceScale = Math.min(1, 1800 / Math.max(w, h));
+              reducedCanvas.width = Math.max(1, Math.round(w * reduceScale));
+              reducedCanvas.height = Math.max(1, Math.round(h * reduceScale));
+              const reducedCtx = reducedCanvas.getContext("2d");
+              reducedCtx.fillStyle = "#ffffff";
+              reducedCtx.fillRect(0, 0, reducedCanvas.width, reducedCanvas.height);
+              reducedCtx.drawImage(canvas, 0, 0, reducedCanvas.width, reducedCanvas.height);
+              imageData = reducedCanvas.toDataURL("image/jpeg", 0.9);
+            }
+            if (imageData.length > 16 * 1024 * 1024) throw new Error("Gambar hasil kompresi masih terlalu besar. Gunakan gambar dengan ukuran lebih kecil.");
+
+            capturedPhotos.boqDoc = imageData;
+            setBoqModalImagePreview(imageData, `Gambar siap diunggah (${w.toLocaleString("id-ID")} × ${h.toLocaleString("id-ID")} piksel). File belum tersimpan ke Google Drive sampai Anda menekan Simpan.`);
+          } catch (err) {
+            capturedPhotos.boqDoc = "";
+            alert(err.message || "Gambar gagal diproses.");
+          }
         };
         img.src = e.target.result;
       };
@@ -4105,7 +4207,9 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       if (!kodeItem || !namaItem) { alert("Kode Item dan Nama Item wajib diisi."); return; }
 
       const btn = document.getElementById("btnSaveBoqDoc");
-      btn.disabled = true; btn.textContent = "Menyimpan...";
+      const originalLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = capturedPhotos.boqDoc ? "Mengunggah gambar & menyimpan..." : "Menyimpan...";
 
       const existing = boqItems.find(x => x.idItem === idItem);
       const updatedObj = {
@@ -4123,36 +4227,60 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         planW2: existing ? (existing.planW2 || 0) : 0,
         planW3: existing ? (existing.planW3 || 0) : 0,
         planW4: existing ? (existing.planW4 || 0) : 0,
-        gambarUrl: capturedPhotos.boqDoc || (existing ? existing.gambarUrl : ""),
+        // Base64 hanya untuk dikirim ke server; tidak pernah disimpan sebagai gambarUrl.
+        gambarUrl: existing ? (existing.gambarUrl || "") : "",
+        gambarFileId: existing ? (existing.gambarFileId || "") : "",
+        gambarFullUrl: existing ? (existing.gambarFullUrl || "") : "",
         catatanStandar: document.getElementById("bCatatan").value.trim()
       };
 
-      if (apiUrl && apiUrl.startsWith("http")) {
-        try {
-          const res = await fetch(apiUrl, {
+      try {
+        if (apiUrl && apiUrl.startsWith("http")) {
+          const response = await fetch(apiUrl, {
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
               action: "upsertBoqDoc",
               ...updatedObj,
               kodeWarna: updatedObj.warna,
-              fotoBase64: capturedPhotos.boqDoc
+              fotoBase64: capturedPhotos.boqDoc || ""
             })
           });
-          const data = await res.json();
-          if (data.status === "success" && data.gambarUrl) updatedObj.gambarUrl = data.gambarUrl;
-        } catch (e) { console.warn(e); }
+          if (!response.ok) throw new Error(`Server mengembalikan HTTP ${response.status}.`);
+          const data = await response.json();
+          if (!data || data.status !== "success") {
+            throw new Error((data && data.message) || "Google Apps Script menolak penyimpanan item BOQ.");
+          }
+          if (capturedPhotos.boqDoc && !data.gambarUrl) {
+            throw new Error("Data item diterima, tetapi URL gambar Google Drive tidak dikembalikan. Jangan tutup form; coba lagi atau periksa folder Drive.");
+          }
+          updatedObj.gambarUrl = data.gambarUrl || updatedObj.gambarUrl;
+          updatedObj.gambarPreviewUrl = data.gambarPreviewUrl || updatedObj.gambarPreviewUrl || "";
+          updatedObj.gambarFullUrl = data.gambarFullUrl || updatedObj.gambarFullUrl || getPhotoFullUrl(updatedObj.gambarUrl);
+          updatedObj.gambarFileId = data.gambarFileId || updatedObj.gambarFileId || extractDriveFileId(updatedObj.gambarUrl);
+        } else if (capturedPhotos.boqDoc) {
+          throw new Error("Gambar tidak dapat disimpan karena aplikasi belum terhubung ke Google Sheets/Apps Script. Hubungkan database lalu coba lagi.");
+        } else {
+          alert("Peringatan: aplikasi sedang Mode Lokal. Perubahan hanya tersimpan pada browser/perangkat ini, bukan ke Google Sheets.");
+        }
+
+        const idx = boqItems.findIndex(x => x.idItem === idItem);
+        if (idx > -1) boqItems[idx] = updatedObj;
+        else boqItems.push(updatedObj);
+        saveLocalAll();
+        capturedPhotos.boqDoc = "";
+        closeModal("boqModal");
+        docBoqPage = 1;
+        renderDocControl();
+        if (activeMenu === "inspection") onInspItemChange();
+        if (apiUrl && apiUrl.startsWith("http")) alert("Item BOQ dan gambar referensi berhasil disimpan ke Google Sheets dan Google Drive.");
+      } catch (err) {
+        console.error("saveBoqDoc failed:", err);
+        alert("PENYIMPANAN GAGAL. Data belum dinyatakan tersimpan.\n\n" + (err.message || String(err)));
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
       }
-
-      const idx = boqItems.findIndex(x => x.idItem === idItem);
-      if (idx > -1) boqItems[idx] = updatedObj;
-      else boqItems.push(updatedObj);
-
-      saveLocalAll();
-      btn.disabled = false; btn.textContent = "Simpan Item BOQ & Dokumen";
-      closeModal("boqModal");
-      docBoqPage = 1;
-      renderDocControl();
     }
 
     async function deleteBoqDoc(idItem) {
@@ -4181,12 +4309,27 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
     }
 
     // ==================== PHOTO TRAIL VIEWER ====================
+    function extractDriveFileId(rawUrl) {
+      const url = String(rawUrl || "").trim();
+      if (!url) return "";
+      const patterns = [
+        /[?&]id=([a-zA-Z0-9_-]+)/,
+        /\/file\/d\/([a-zA-Z0-9_-]+)/,
+        /\/d\/([a-zA-Z0-9_-]+)/
+      ];
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) return match[1];
+      }
+      return "";
+    }
+
     function getPhotoPreviewUrl(rawUrl) {
       const url = String(rawUrl || "").trim();
       if (!/^https?:\/\//i.test(url) && !/^data:image\//i.test(url)) return "";
-      if (/drive\.google\.com/i.test(url)) {
-        const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-        if (match && match[1]) return `https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w1600`;
+      const fileId = extractDriveFileId(url);
+      if (fileId && /drive\.google\.com/i.test(url)) {
+        return `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w2000`;
       }
       return url;
     }
@@ -4194,22 +4337,96 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
     function getPhotoFullUrl(rawUrl) {
       const url = String(rawUrl || "").trim();
       if (!/^https?:\/\//i.test(url)) return "";
-      if (/drive\.google\.com/i.test(url)) {
-        const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-        if (match && match[1]) return `https://drive.google.com/uc?export=view&id=${encodeURIComponent(match[1])}`;
+      const fileId = extractDriveFileId(url);
+      if (fileId && /drive\.google\.com/i.test(url)) {
+        return `https://drive.google.com/file/d/${encodeURIComponent(fileId)}/view`;
       }
       return url;
     }
 
+    function getDriveDirectImageUrl(rawUrl) {
+      const fileId = extractDriveFileId(rawUrl);
+      return fileId ? `https://drive.google.com/uc?export=view&id=${encodeURIComponent(fileId)}` : String(rawUrl || "");
+    }
+
+    function getDriveGoogleusercontentUrl(rawUrl) {
+      const fileId = extractDriveFileId(rawUrl);
+      return fileId ? `https://lh3.googleusercontent.com/d/${encodeURIComponent(fileId)}=w2000` : "";
+    }
+
+    function handleReferenceImageError(img) {
+      if (!img) return;
+      const raw = img.dataset.originalUrl ? decodeURIComponent(img.dataset.originalUrl) : img.src;
+      const fileId = extractDriveFileId(raw);
+      const stage = Number(img.dataset.retryStage || 0);
+      if (fileId && stage === 0) {
+        img.dataset.retryStage = "1";
+        img.src = getDriveDirectImageUrl(raw);
+        return;
+      }
+      if (fileId && stage === 1) {
+        img.dataset.retryStage = "2";
+        img.src = getDriveGoogleusercontentUrl(raw);
+        return;
+      }
+      img.style.display = "none";
+      const fallback = img.parentElement ? img.parentElement.querySelector(".image-load-fallback") : null;
+      if (fallback) fallback.style.display = "block";
+    }
+
+    function handleBoqPreviewError(img) {
+      handleReferenceImageError(img);
+      const fallback = document.getElementById("bImgPreviewFallback");
+      if (fallback && img && img.style.display === "none") fallback.style.display = "block";
+    }
+
+    function setInspectionReferenceImage(item) {
+      const img = document.getElementById("inspRefImg");
+      const fallback = document.getElementById("inspRefImageFallback");
+      const fullLink = document.getElementById("inspRefFullLink");
+      const raw = item.gambarUrl || getDefaultSchematicSvg(item.kodeItem, item.warna);
+      img.dataset.originalUrl = encodeURIComponent(String(raw || ""));
+      img.dataset.retryStage = "0";
+      img.style.display = "block";
+      if (fallback) fallback.style.display = "none";
+      img.src = getPhotoPreviewUrl(raw) || raw;
+      const fullUrl = item.gambarFullUrl || getPhotoFullUrl(raw);
+      if (fullUrl) {
+        fullLink.href = fullUrl;
+        fullLink.style.display = "inline-block";
+      } else {
+        fullLink.style.display = "none";
+        fullLink.removeAttribute("href");
+      }
+    }
+
+    function openReferenceImageFull() {
+      const link = document.getElementById("inspRefFullLink");
+      if (link && link.href && link.style.display !== "none") window.open(link.href, "_blank", "noopener");
+    }
+
+    function openImageFullFromElement(img) {
+      if (!img) return;
+      const rawFull = img.dataset.fullUrl ? decodeURIComponent(img.dataset.fullUrl) : "";
+      const raw = img.dataset.originalUrl ? decodeURIComponent(img.dataset.originalUrl) : img.src;
+      const fullUrl = rawFull || getPhotoFullUrl(raw);
+      if (fullUrl) window.open(fullUrl, "_blank", "noopener");
+    }
+
     function handlePhotoPreviewError(img) {
       if (!img) return;
-      // Jika thumbnail Google Drive gagal, coba alamat file asli satu kali sebelum menampilkan pesan.
-      if (img.dataset.fallbackTried !== "1" && img.dataset.originalUrl) {
-        img.dataset.fallbackTried = "1";
-        try {
-          img.src = decodeURIComponent(img.dataset.originalUrl);
-          return;
-        } catch (e) {}
+      const raw = img.dataset.originalUrl ? decodeURIComponent(img.dataset.originalUrl) : img.src;
+      const fileId = extractDriveFileId(raw);
+      const stage = Number(img.dataset.retryStage || 0);
+      if (fileId && stage === 0) {
+        img.dataset.retryStage = "1";
+        img.src = getDriveDirectImageUrl(raw);
+        return;
+      }
+      if (fileId && stage === 1) {
+        img.dataset.retryStage = "2";
+        img.src = getDriveGoogleusercontentUrl(raw);
+        return;
       }
       img.style.display = "none";
       const wrap = img.closest(".photo-trail-image-wrap");
