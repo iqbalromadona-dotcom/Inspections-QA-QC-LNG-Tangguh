@@ -292,6 +292,10 @@
     .table-wrap table.readable-rework-table { min-width: 1250px; }
     .table-wrap table.readable-log-table { min-width: 2350px; }
     .table-wrap table.readable-tracking-table { min-width: 2050px; }
+    .table-wrap table.readable-log-table th:last-child,
+    .table-wrap table.readable-log-table td:last-child { min-width: 270px; width: 270px; }
+    .log-action-buttons { display:flex; flex-wrap:nowrap; align-items:center; justify-content:center; gap:6px; min-width:250px; white-space:nowrap; }
+    .log-action-buttons .btn { flex:0 0 auto; white-space:nowrap; }
     .table-wrap table.readable-guest-table td,
     .table-wrap table.readable-rework-table td,
     .table-wrap table.readable-log-table td,
@@ -491,23 +495,22 @@
     .modal-desc { font-size: 0.8rem; color: var(--slate-500); margin-bottom: 14px; }
     .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
-    .dash-unit-details { display:inline-block; min-width:52px; }
-    .dash-unit-details summary {
-      cursor:pointer; list-style:none; display:inline-flex; align-items:center; justify-content:center;
-      gap:5px; border:1px solid var(--border); border-radius:7px; padding:4px 8px;
-      background:var(--slate-50); color:var(--amber); font-weight:800;
+    .dash-unit-detail-btn {
+      display:inline-flex; align-items:center; justify-content:center; gap:5px;
+      border:1px solid var(--border); border-radius:7px; padding:5px 9px;
+      background:var(--slate-50); color:var(--amber); font-size:0.74rem; font-weight:800;
+      cursor:pointer; white-space:nowrap;
     }
-    .dash-unit-details summary::-webkit-details-marker { display:none; }
-    .dash-unit-details[open] summary { border-color:var(--blue); color:var(--blue-dark); }
-    .dash-unit-panel {
-      min-width:250px; max-width:360px; max-height:230px; overflow:auto; margin-top:6px;
-      padding:10px; border:1px solid var(--border); border-radius:8px; background:#fff;
-      box-shadow:0 5px 14px rgba(15,23,42,0.12); white-space:normal; text-align:left;
-    }
-    .dash-unit-group { margin-bottom:8px; }
-    .dash-unit-group:last-child { margin-bottom:0; }
-    .dash-unit-group strong { display:block; font-size:0.72rem; margin-bottom:3px; }
-    .dash-unit-group span { display:block; font-size:0.72rem; color:var(--slate-600); line-height:1.5; word-break:break-word; }
+    .dash-unit-detail-btn:hover { border-color:var(--blue); color:var(--blue-dark); background:#eff6ff; }
+    .dash-unit-table { width:100%; min-width:720px; border-collapse:collapse; font-size:0.78rem; }
+    .dash-unit-table th { background:var(--slate-100); padding:9px 11px; border:1px solid var(--slate-200); white-space:nowrap; }
+    .dash-unit-table td { padding:9px 11px; border:1px solid var(--slate-200); vertical-align:top; }
+    .dash-unit-table .dash-unit-qty { width:72px; text-align:center; font-weight:800; white-space:nowrap; }
+    .dash-unit-table .dash-unit-numbers { min-width:420px; line-height:1.6; color:var(--slate-700); overflow-wrap:anywhere; }
+    .dash-unit-status { font-weight:800; white-space:nowrap; }
+    .dash-unit-status.done { color:var(--green-dark); }
+    .dash-unit-status.pending { color:var(--amber); }
+    .log-action-cell { min-width:270px; width:270px; white-space:nowrap; }
 
     /* ================= REPORT PREVIEW & PRINT A4 BOQ REPORT ================= */
     .p-head { border-bottom: 2.5px solid #0f172a; padding-bottom: 10px; margin-bottom: 14px; }
@@ -712,7 +715,6 @@
                   <thead>
                     <tr>
                       <th>Kode Tag Fisik</th>
-                      <th>Periode</th>
                       <th>Bangunan</th>
                       <th>Kode Item</th>
                       <th>Nama Item</th>
@@ -756,6 +758,7 @@
                       <th>Bangunan</th>
                       <th>Kode Item</th>
                       <th>Nama / Deskripsi Item</th>
+                      <th>Dimensi</th>
                       <th class="text-right">Berat Satuan</th>
                       <th class="text-right">Target BOQ</th>
                       <th class="text-right">Total Berat BOQ</th>
@@ -1326,6 +1329,29 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: RINCIAN NOMOR UNIT DASHBOARD ==================== -->
+  <div id="dashUnitDetailModal" class="modal-backdrop" onclick="if(event.target===this) closeModal('dashUnitDetailModal')">
+    <div class="modal" style="max-width:920px;">
+      <div class="modal-title" id="dashUnitDetailTitle">Rincian Status Nomor Unit</div>
+      <div class="modal-desc" id="dashUnitDetailDesc">Status setiap nomor unit untuk item BOQ terpilih.</div>
+      <div class="table-wrap">
+        <table class="dash-unit-table">
+          <thead>
+            <tr>
+              <th style="width:290px;">Status Unit</th>
+              <th style="width:72px; text-align:center;">Qty</th>
+              <th>Nomor Unit</th>
+            </tr>
+          </thead>
+          <tbody id="dashUnitDetailBody"></tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-dark" onclick="closeModal('dashUnitDetailModal')">Tutup</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MODAL: TAMBAH / EDIT BOQ & DOCUMENT CONTROL ==================== -->
   <div id="boqModal" class="modal-backdrop">
     <div class="modal" style="max-width:680px;">
@@ -1346,6 +1372,10 @@
         <div class="form-group">
           <label class="form-label">Nama / Deskripsi Item BOQ</label>
           <input type="text" id="bNama" class="form-control" placeholder="Kolom Utama WF 200x100" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dimensi / Ukuran</label>
+          <input type="text" id="bDimensi" class="form-control" placeholder="Contoh: 200 x 100 x 6 x 8 mm atau Ø 100 mm" />
         </div>
       <div class="grid-3">
         <div class="form-group">
@@ -1439,6 +1469,7 @@
     const PAGE_SIZE = 10;
     let dashBoqPage = 1;
     let guestDataPage = 1;
+    let dashUnitDetailsCache = {};
     let docBoqPage = 1;
 
     // Unit selector state
@@ -2127,11 +2158,30 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       return result;
     }
 
-    function renderUnitDetailGroup(title, units, emptyText) {
-      return `<div class="dash-unit-group"><strong>${title} (${units.length})</strong><span>${units.length ? units.join(", ") : emptyText}</span></div>`;
+    function renderUnitDetailGroup(title, units, statusType, emptyText) {
+      const qty = Array.isArray(units) ? units.length : 0;
+      const numbers = qty ? units.join(", ") : (emptyText || "Tidak ada unit.");
+      return `
+        <tr>
+          <td><span class="dash-unit-status ${statusType}">${title}</span></td>
+          <td class="dash-unit-qty">${qty}</td>
+          <td class="dash-unit-numbers">${numbers}</td>
+        </tr>
+      `;
+    }
+
+    function openDashboardUnitDetails(encodedItemId) {
+      const itemId = decodeURIComponent(encodedItemId || "");
+      const detail = dashUnitDetailsCache[itemId];
+      if (!detail) return;
+      document.getElementById("dashUnitDetailTitle").textContent = `Rincian Nomor Unit — ${detail.kodeItem}`;
+      document.getElementById("dashUnitDetailDesc").textContent = `${detail.bangunan} • ${detail.namaItem} | Target BOQ: ${detail.target} unit`;
+      document.getElementById("dashUnitDetailBody").innerHTML = detail.rows;
+      document.getElementById("dashUnitDetailModal").classList.add("show");
     }
 
     function renderDashboard() {
+      dashUnitDetailsCache = {};
       const sBoq = getScopedBoq();
       const sLogs = getScopedLogs();
 
@@ -2218,11 +2268,19 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           const pWait = Math.min(100 - pApp, (waitQty / t) * 100);
           const pRw = Math.min(100 - pApp - pWait, (rwQty / t) * 100);
 
-          const doneHtml = renderUnitDetailGroup("Tiba Papua", details.papua, "Tidak ada unit.") +
-            renderUnitDetailGroup("Approved Jakarta", details.approved, "Tidak ada unit.") +
-            renderUnitDetailGroup("Sudah QC (Menunggu Approval)", details.qc, "Tidak ada unit.");
-          const pendingHtml = renderUnitDetailGroup("Belum QC", details.belum, "Tidak ada unit.") +
-            renderUnitDetailGroup("Rework / Belum Lolos", details.rework, "Tidak ada unit.");
+          const detailRows =
+            renderUnitDetailGroup("Tiba Papua", details.papua, "done", "Tidak ada unit.") +
+            renderUnitDetailGroup("Approved Jakarta", details.approved, "done", "Tidak ada unit.") +
+            renderUnitDetailGroup("Sudah QC — Menunggu Approval", details.qc, "done", "Tidak ada unit.") +
+            renderUnitDetailGroup("Belum QC", details.belum, "pending", "Tidak ada unit.") +
+            renderUnitDetailGroup("Rework / Belum Lolos", details.rework, "pending", "Tidak ada unit.");
+          dashUnitDetailsCache[b.idItem] = {
+            bangunan: b.bangunan,
+            kodeItem: b.kodeItem,
+            namaItem: b.namaItem,
+            target: Number(b.target) || 0,
+            rows: detailRows
+          };
 
           return `
             <tr>
@@ -2237,15 +2295,9 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
               <td class="text-right" style="color:${rwQty > 0 ? 'var(--red)' : 'var(--slate-400)'}; font-weight:700;">${rwQty}</td>
               <td class="text-right" style="color:var(--purple); font-weight:700;">${papuaQty}</td>
               <td class="text-right" style="color:${sisa > 0 ? 'var(--amber)' : 'var(--green)'}; font-weight:700;">
-                <details class="dash-unit-details">
-                  <summary>${sisa} <span style="font-size:0.65rem;">Rincian</span></summary>
-                  <div class="dash-unit-panel">
-                    <div style="font-size:0.76rem; font-weight:800; margin-bottom:7px; color:var(--green-dark);">Sudah (${okQty})</div>
-                    ${doneHtml}
-                    <div style="font-size:0.76rem; font-weight:800; margin:8px 0 7px; color:var(--amber);">Belum / Sisa (${sisa})</div>
-                    ${pendingHtml}
-                  </div>
-                </details>
+                <button type="button" class="dash-unit-detail-btn" onclick="openDashboardUnitDetails('${encodeURIComponent(b.idItem)}')">
+                  ${sisa} <span style="font-size:0.65rem;">Rincian</span>
+                </button>
               </td>
               <td>
                 <div class="stacked-bar" title="Approved: ${appQty}, Menunggu: ${waitQty}, Rework: ${rwQty}">
@@ -2312,7 +2364,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const pageRows = filtered.slice(startIdx, startIdx + PAGE_SIZE);
 
       document.getElementById("guestDataBody").innerHTML = pageRows.length === 0
-        ? `<tr><td colspan="17" class="text-center" style="padding:18px; color:var(--slate-500);">Data tidak ditemukan untuk kata kunci pencarian tersebut.</td></tr>`
+        ? `<tr><td colspan="16" class="text-center" style="padding:18px; color:var(--slate-500);">Data tidak ditemukan untuk kata kunci pencarian tersebut.</td></tr>`
         : pageRows.map(l => {
           let appPill = "pill-amber";
           if (l.statusApproval === "Approved") appPill = "pill-green";
@@ -2329,7 +2381,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           return `
             <tr>
               <td><span class="tag-code">${l.tagBundel || "-"}</span></td>
-              <td>${l.minggu && l.minggu !== "-" ? l.minggu : "-"}</td>
               <td>${l.bangunan || "-"}</td>
               <td><strong>${l.kodeItem || "-"}</strong></td>
               <td>${l.namaItem || "-"}</td>
@@ -2380,7 +2431,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const pageItems = sBoq.slice(startIdx, startIdx + PAGE_SIZE);
 
       document.getElementById("boqManageTableBody").innerHTML = pageItems.length === 0
-        ? `<tr><td colspan="8" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada item material BOQ pada area ini. Klik "+ Tambah Item Material".</td></tr>`
+        ? `<tr><td colspan="9" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada item material BOQ pada area ini. Klik "+ Tambah Item Material".</td></tr>`
         : pageItems.map((b, idx) => {
           const bSatuan = Number(b.beratSatuan) || 0;
           const totalBerat = bSatuan * Number(b.target || 0);
@@ -2392,6 +2443,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
               <td>
                 <div style="font-weight:700; color:var(--navy);">${b.namaItem}</div>
               </td>
+              <td>${b.dimensi || "-"}</td>
               <td class="text-right">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "<span style='color:#94a3b8;'>0 kg</span>"}</td>
               <td class="text-right"><strong>${b.target}</strong> ${b.satuan}</td>
               <td class="text-right">${formatWeightHtml(totalBerat, "0 kg")}</td>
@@ -2407,7 +2459,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
 
       document.getElementById("boqManageTableFoot").innerHTML = `
         <tr>
-          <td colspan="6" class="text-right">TOTAL BERAT KESELURUHAN ITEM BOQ (${activeBuilding}):</td>
+          <td colspan="7" class="text-right">TOTAL BERAT KESELURUHAN ITEM BOQ (${activeBuilding}):</td>
           <td class="text-right" style="color:var(--blue-dark);">${formatWeightHtml(grandTotalBerat, "0 kg")}</td>
           <td></td>
         </tr>
@@ -2437,6 +2489,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
               <img src="${imgSrc}" alt="${b.kodeItem}" style="width:100%; height:145px; object-fit:contain; background:#f8fafc; border:1px solid var(--border); border-radius:7px; margin-bottom:8px;" />
               <div style="font-weight:800; font-size:0.9rem; color:var(--navy);">${b.namaItem}</div>
               <div style="font-size:0.75rem; color:var(--slate-600); margin:3px 0 6px;">
+                Dimensi: <strong>${b.dimensi || "Belum diisi"}</strong><br />
                 Target: <strong>${b.target} ${b.satuan}</strong> • Berat: <strong>${formatWeightPlain(totalBerat)}</strong>
               </div>
               <div style="font-size:0.77rem; background:var(--slate-50); border:1px solid var(--slate-200); padding:7px 9px; border-radius:6px; color:var(--slate-700);">
@@ -2565,7 +2618,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       document.getElementById("inspRefImg").src = item.gambarUrl || getDefaultSchematicSvg(item.kodeItem, item.warna);
       document.getElementById("inspRefTitle").textContent = `${item.kodeItem} — ${item.namaItem}`;
       const warnaLabel = item.warna || "Belum Ditentukan / Tanpa Warna";
-      document.getElementById("inspRefMeta").textContent = `Bangunan: ${item.bangunan} | Warna Modul: ${warnaLabel} | Target BOQ: ${item.target} ${item.satuan}`;
+      document.getElementById("inspRefMeta").textContent = `Bangunan: ${item.bangunan} | Dimensi: ${item.dimensi || "Belum diisi"} | Warna Modul: ${warnaLabel} | Target BOQ: ${item.target} ${item.satuan}`;
       document.getElementById("inspRefNote").textContent = item.catatanStandar || "Periksa dimensi, kelurusan, las, lubang baut & label.";
 
       const prefix = getBuildingCode(bldg) + "-" + kode + "-";
@@ -3140,7 +3193,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       document.getElementById("logJakartaHead").innerHTML = `
         <tr>
           <th>Kode Tag Fisik</th>
-          <th>Periode</th>
           <th>Bangunan</th>
           <th>Kode Item</th>
           <th>Nama Item</th>
@@ -3164,7 +3216,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const filtered = sLogs.filter(l => filterApp === "ALL" || l.statusApproval === filterApp);
 
       document.getElementById("logJakartaBody").innerHTML = filtered.length === 0
-        ? `<tr><td colspan="${isMgr ? 18 : 17}" class="text-center" style="color:var(--slate-500); padding:16px;">Belum ada data log inspeksi pada filter ini.</td></tr>`
+        ? `<tr><td colspan="${isMgr ? 17 : 16}" class="text-center" style="color:var(--slate-500); padding:16px;">Belum ada data log inspeksi pada filter ini.</td></tr>`
         : filtered.map(l => {
           let qcPill = l.statusQc === "Rework" ? "pill-red" : (l.statusQc === "OK" ? "pill-green" : "pill-gray");
           let appPill = "pill-amber";
@@ -3176,7 +3228,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           return `
             <tr>
               <td><span class="tag-code">${l.tagBundel || "-"}</span></td>
-              <td>${l.minggu && l.minggu !== "-" ? l.minggu : "-"}</td>
               <td>${l.bangunan || "-"}</td>
               <td><strong>${l.kodeItem || "-"}</strong></td>
               <td>${l.namaItem || "-"}</td>
@@ -3197,8 +3248,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
                   : `<span style="font-size:0.72rem; color:#94a3b8;">Belum ada foto</span>`}
               </td>
               ${isMgr ? `
-                <td class="text-center">
-                  <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+                <td class="text-center log-action-cell">
+                  <div class="log-action-buttons">
                     <button class="btn btn-light btn-sm" onclick="openInspectionEditModal('${l.idLog}')">Edit Input</button>
                     <button class="btn ${l.statusApproval === 'Approved' ? 'btn-light' : 'btn-success'} btn-sm" onclick="openApproveModal('${l.idLog}')">${l.statusApproval === 'Approved' ? 'Ubah Approval' : 'Approve'}</button>
                     <button class="btn btn-danger btn-sm" onclick="deleteInspectionLog('${l.idLog}')">Hapus</button>
@@ -3987,6 +4038,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         document.getElementById("bKode").value = b.kodeItem;
         // Kode warna dipertahankan dari data existing, tetapi tidak lagi diedit melalui form.
         document.getElementById("bNama").value = b.namaItem;
+        document.getElementById("bDimensi").value = b.dimensi || "";
         document.getElementById("bSatuan").value = b.satuan;
         document.getElementById("bTarget").value = b.target;
         document.getElementById("bBerat").value = Number(b.beratSatuan) || 0;
@@ -4005,6 +4057,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         document.getElementById("bKode").value = "";
 
         document.getElementById("bNama").value = "";
+        document.getElementById("bDimensi").value = "";
         document.getElementById("bSatuan").value = "Batang";
         document.getElementById("bTarget").value = 20;
         document.getElementById("bBerat").value = 0;
@@ -4053,6 +4106,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         bangunan,
         kodeItem,
         namaItem,
+        dimensi: document.getElementById("bDimensi").value.trim(),
         warna: existing ? (existing.warna || "Belum Ditentukan / Tanpa Warna") : "Belum Ditentukan / Tanpa Warna",
         satuan: document.getElementById("bSatuan").value.trim(),
         target: Number(document.getElementById("bTarget").value) || 0,
