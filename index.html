@@ -1626,14 +1626,51 @@
       const u = document.getElementById("loginUser").value.trim().toLowerCase();
       const p = document.getElementById("loginPass").value.trim();
       const errBox = document.getElementById("loginErr");
+      const submitBtn = e.submitter || document.querySelector('#loginScreen button[type="submit"]');
       errBox.style.display = "none";
 
-      if (apiUrl && masterUsers.length <= 6) {
-        await syncFromCloud(true);
+      if (!u || !p) {
+        errBox.textContent = "Username dan sandi wajib diisi.";
+        errBox.style.display = "block";
+        return;
       }
 
-      const found = masterUsers.find(acc => acc.username.toLowerCase() === u && acc.sandi === p);
+      // Jika URL cloud dikonfigurasi, autentikasi harus diverifikasi oleh Code.gs.
+      // Password tidak diambil dari masterUsers lokal atau dikirim melalui endpoint GET.
+      if (apiUrl && apiUrl.startsWith("http")) {
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Memverifikasi..."; }
+        try {
+          const res = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "login", username: u, password: p })
+          });
+          const data = await res.json();
+          if (!res.ok || data.status !== "success" || !data.user) {
+            errBox.textContent = data.message || "Username atau sandi salah, atau akun tidak aktif.";
+            errBox.style.display = "block";
+            return;
+          }
+
+          currentUser = data.user;
+          localStorage.setItem("tangguh_v2_user", JSON.stringify(currentUser));
+          await syncFromCloud(true);
+          enterApp();
+          return;
+        } catch (err) {
+          console.error("Login cloud gagal:", err);
+          errBox.textContent = "Tidak dapat memverifikasi login ke Google Sheets. Periksa URL Web App dan deployment Code.gs terbaru.";
+          errBox.style.display = "block";
+          return;
+        } finally {
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Masuk ke Sistem"; }
+        }
+      }
+
+      // Login lokal hanya digunakan jika URL cloud memang tidak dikonfigurasi.
+      const found = masterUsers.find(acc => String(acc.username || "").toLowerCase() === u && String(acc.sandi || "") === p);
       if (!found) {
+        errBox.textContent = "Username atau sandi salah, atau akun tidak aktif.";
         errBox.style.display = "block";
         return;
       }
