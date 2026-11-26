@@ -495,6 +495,31 @@
     .modal-desc { font-size: 0.8rem; color: var(--slate-500); margin-bottom: 14px; }
     .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
+    /* Foto trail: preview diperbesar, tidak dipotong, dan tidak memakai latar hitam. */
+    .photo-trail-modal { max-width: 1120px !important; }
+    .photo-trail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .photo-trail-card { min-width: 0; border: 1px solid var(--border); border-radius: 9px; padding: 12px; background: #fff; }
+    .photo-trail-card-title { font-size: 0.82rem; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+    .photo-trail-image-wrap { width: 100%; height: min(52vh, 460px); min-height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f8fafc; border: 1px solid var(--slate-200); border-radius: 8px; }
+    .photo-trail-image { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; background: #f8fafc; }
+    .photo-trail-image-fallback { padding: 24px; color: var(--slate-500); text-align: center; font-size: 0.8rem; }
+    .photo-trail-note { font-size: 0.76rem; color: var(--slate-600); margin-top: 8px; overflow-wrap: anywhere; }
+    .photo-trail-full-link { font-size: 0.78rem; color: var(--blue); display: inline-block; margin-top: 8px; font-weight: 700; }
+
+    /* QC Incoming Papua: satu baris scan fisik terpisah dari daftar material. */
+    .papua-scan-card { border-left: 4px solid var(--purple); padding: 12px 14px; margin-bottom: 12px; }
+    .papua-scan-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .papua-scan-row { display:flex; align-items:center; gap:8px; }
+    .papua-scan-row .form-control { flex:1; min-width:0; }
+    .papua-scan-card .scan-feedback { margin-top:6px; }
+    @media (max-width: 720px) {
+      .photo-trail-grid { grid-template-columns: 1fr; }
+      .photo-trail-image-wrap { height: 340px; min-height: 220px; }
+      .papua-scan-heading { align-items:flex-start; }
+      .papua-scan-row { flex-wrap:wrap; }
+      .papua-scan-row .form-control { flex-basis:100%; }
+    }
+
     .dash-unit-detail-btn {
       display:inline-flex; align-items:center; justify-content:center; gap:5px;
       border:1px solid var(--border); border-radius:7px; padding:5px 9px;
@@ -943,6 +968,10 @@
               </form>
             </div>
 
+          </section>
+
+          <!-- ==================== MENU TERPISAH: APPROVAL JAKARTA (KHUSUS PM / SE) ==================== -->
+          <section id="secApproval" style="display:none;">
             <!-- LAMPIRAN 2: ANTREAN REWORK & LOG INSPEKSI (DISEMBUNYIKAN UNTUK TEKNISI1, TEKNISI2, TEKNISI3 AGAR SIMPEL) -->
             <div id="managerInspectionTablesWrap">
               <!-- ANTREAN REWORK (PERBAIKAN) -->
@@ -1000,18 +1029,19 @@
           <!-- ==================== MENU KHUSUS: QC INCOMING DI PAPUA (SCAN BARCODE TAGGING FISIK) ==================== -->
           <section id="secPapua" style="display:none;">
             <!-- SCANNER KHUSUS QC INCOMING PAPUA -->
-            <div class="card" style="border-left: 4px solid var(--purple); background: linear-gradient(90deg, #faf5ff 0%, #ffffff 100%);">
-              <div class="card-header" style="margin-bottom:10px;">
+            <div class="card papua-scan-card">
+              <div class="papua-scan-heading">
                 <div>
-                  <div class="card-title" style="color:#5b21b6;">Scan Barcode Tagging Fisik — QC Incoming Site Papua</div>
-                  <div class="card-sub">Scan barcode pada tagging fisik material yang tiba di Teluk Bintuni Papua untuk langsung membuka form penerimaan &amp; foto bukti</div>
+                  <div class="card-title" style="color:#5b21b6;">Scan Kode Tag Fisik — QC Incoming Papua</div>
+                  <div class="card-sub">Gunakan scanner barcode fisik. Hasil scan akan dicocokkan dengan Kode Tag Fisik pada daftar pengiriman.</div>
                 </div>
+                <span class="pill pill-purple">Scan cepat</span>
               </div>
-              <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
-                <button type="button" class="btn btn-dark" onclick="openBarcodeScanner('papua')">Scan Barcode Tagging (Kamera Live)</button>
-                <input type="text" id="papuaBarcodeInput" class="form-control" style="max-width:280px;" placeholder="Scan / Ketik Kode Tag Fisik atau Kode Item..." onkeydown="if(event.key==='Enter'){event.preventDefault(); processPapuaBarcode(this.value);}" />
-                <button type="button" class="btn btn-primary" onclick="processPapuaBarcode(document.getElementById('papuaBarcodeInput').value)">Cari &amp; QC Incoming</button>
-                <button type="button" class="btn btn-light" id="btnResetPapuaScan" style="display:none;" onclick="resetPapuaScanFilter()">Tampilkan Semua</button>
+              <div class="papua-scan-row">
+                <input type="text" id="papuaBarcodeInput" class="form-control" placeholder="Scan Kode Tag Fisik di sini..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); processPapuaBarcode(this.value);}" />
+                <button type="button" class="btn btn-primary" onclick="processPapuaBarcode(document.getElementById('papuaBarcodeInput').value)">Proses Scan</button>
+                <button type="button" class="btn btn-light btn-sm" onclick="openBarcodeScanner('papua')">Kamera</button>
+                <button type="button" class="btn btn-light btn-sm" id="btnResetPapuaScan" style="display:none;" onclick="resetPapuaScanFilter()">Reset Daftar</button>
               </div>
               <div id="papuaScanFeedback" class="scan-feedback"></div>
             </div>
@@ -1311,20 +1341,9 @@
         <label class="form-label">Catatan Pemeriksaan Bongkar Site Papua</label>
         <textarea id="papuaCatatan" class="form-control" rows="2" placeholder="Contoh: Jumlah batang & karung baut lengkap, cat kode warna jelas, siap instalasi."></textarea>
       </div>
-      <div class="form-group">
-        <label class="form-label">Foto Bukti QC Incoming Site Papua (Wajib)</label>
-        <div class="cam-box">
-          <div style="display:flex; gap:6px; justify-content:center;">
-            <button type="button" class="btn btn-dark btn-sm" onclick="openLiveCamera('papua')">Buka Kamera Live</button>
-            <button type="button" class="btn btn-light btn-sm" onclick="triggerFallbackFile('papua')">File Cadangan</button>
-          </div>
-          <img id="papuaPhotoPreview" class="cam-preview" alt="Preview Incoming Papua" />
-          <input type="file" id="papuaFallbackInput" accept="image/*" style="display:none" onchange="handleFallbackFile(event, 'papua')" />
-        </div>
-      </div>
       <div class="modal-footer">
         <button class="btn btn-light" onclick="closeModal('papuaModal')">Batal</button>
-        <button class="btn btn-success" id="btnSubmitPapua" onclick="submitPapuaIncoming()">Simpan QC Incoming Papua</button>
+        <button class="btn btn-success" id="btnSubmitPapua" onclick="submitPapuaIncoming()">Konfirmasi Penerimaan</button>
       </div>
     </div>
   </div>
@@ -1412,10 +1431,10 @@
 
   <!-- ==================== MODAL: GALLERY / PHOTO TRAIL VIEWER ==================== -->
   <div id="photoTrailModal" class="modal-backdrop" onclick="closeModal('photoTrailModal')">
-    <div class="modal" style="max-width:720px;" onclick="event.stopPropagation()">
+    <div class="modal photo-trail-modal" onclick="event.stopPropagation()">
       <div class="modal-title" id="ptModalTitle">Jejak Dokumentasi Foto (Traceability)</div>
       <div class="modal-desc" id="ptModalSub">-</div>
-      <div class="grid-2" id="ptPhotosGrid"></div>
+      <div class="photo-trail-grid" id="ptPhotosGrid"></div>
       <div class="modal-footer">
         <button class="btn btn-dark" onclick="closeModal('photoTrailModal')">Tutup</button>
       </div>
@@ -1995,19 +2014,20 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         items = [
           { id: "dashboard", label: "1. Dashboard Monitoring", badge: "" },
           { id: "doc", label: "2. Kelola BOQ & Doc Control", badge: "" },
+          { id: "inspection", label: "3. Input Inspeksi QA/QC", badge: "" },
           {
-            id: "inspection",
-            label: currentUser.role === "PM" ? "3. Approval Jakarta" : "3. Input & Approval JKT",
+            id: "approval",
+            label: "4. Approval Jakarta",
             badge: (pendingApp + reworkCnt) > 0 ? `${pendingApp + reworkCnt}` : "",
             badgeCls: reworkCnt > 0 ? "" : "amber"
           },
           {
             id: "papua",
-            label: "4. QC Incoming Papua",
+            label: "5. QC Incoming Papua",
             badge: inTransitCnt > 0 ? `${inTransitCnt}` : "",
             badgeCls: "amber"
           },
-          { id: "pdf", label: "5. Cetak PDF Berbasis BOQ", badge: "" }
+          { id: "pdf", label: "6. Cetak PDF Berbasis BOQ", badge: "" }
         ];
       } else if (isGuestRole()) {
         document.getElementById("navSectionLabel").textContent = "Menu Guest (Lihat Data)";
@@ -2043,10 +2063,10 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
     }
 
     function switchMenu(menuId) {
-      if (isTechnicianRole() && (menuId === "dashboard" || menuId === "doc" || menuId === "pdf" || menuId === "guestData")) {
+      if (isTechnicianRole() && (menuId === "dashboard" || menuId === "doc" || menuId === "approval" || menuId === "pdf" || menuId === "guestData")) {
         menuId = "inspection";
       }
-      if (isGuestRole() && (menuId === "doc" || menuId === "inspection" || menuId === "papua")) {
+      if (isGuestRole() && (menuId === "doc" || menuId === "inspection" || menuId === "approval" || menuId === "papua")) {
         menuId = "dashboard";
       }
 
@@ -2059,6 +2079,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         guestData: "secGuestData",
         doc: "secDocControl",
         inspection: "secInspection",
+        approval: "secApproval",
         papua: "secPapua",
         pdf: "secPdfBoq"
       };
@@ -2071,9 +2092,10 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         guestData: "Data Log Inspeksi & Tracking Material (Mode Guest)",
         doc: "Kelola BOQ & Document Control",
         inspection: currentUser.role === "PM"
-          ? "Verifikasi & Approval Fabrikasi Jakarta"
-          : (isManagerRole() ? "Input Inspeksi QA/QC & Approval Jakarta" : "Input Inspeksi QA/QC — Workshop Jakarta"),
-        papua: "QC Incoming Site Papua & Tracking Pengiriman (Scan Barcode)",
+          ? "Input Inspeksi QA/QC (Tidak Tersedia untuk PM)"
+          : (isManagerRole() ? "Input Inspeksi QA/QC Jakarta" : "Input Inspeksi QA/QC — Workshop Jakarta"),
+        approval: "Approval & Verifikasi Fabrikasi Jakarta",
+        papua: "QC Incoming Site Papua & Tracking Pengiriman",
         pdf: "Laporan Berita Acara Berdasarkan BOQ"
       };
       document.getElementById("topPageTitle").textContent = titles[menuId] || "Sistem QA/QC";
@@ -2104,6 +2126,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       if (activeMenu === "guestData") renderGuestDataTable();
       if (activeMenu === "doc") renderDocControl();
       if (activeMenu === "inspection") setupInspectionView();
+      if (activeMenu === "approval") renderInspectionTables();
       if (activeMenu === "papua") renderPapuaTracking();
       if (activeMenu === "pdf") renderBoqPdfPreview();
     }
@@ -2569,13 +2592,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
     // ==================== MENU 3: INPUT INSPEKSI & APPROVAL JAKARTA ====================
     function setupInspectionView() {
       const canInput = currentUser.bisaInput === true;
-      const isTech = isTechnicianRole();
-
       document.getElementById("workshopInputCard").style.display = canInput ? "block" : "none";
       document.getElementById("pmNoticeBanner").style.display = currentUser.role === "PM" ? "block" : "none";
-
-      // REVISI #7: Hilangkan tampilan Lampiran 2 (Antrean Rework & Riwayat Input) untuk teknisi1, teknisi2, teknisi3
-      document.getElementById("managerInspectionTablesWrap").style.display = isTech ? "none" : "block";
 
       if (canInput) {
         populateBuildingSelect("fInspBangunan", activeBuilding !== "Gabungan" ? activeBuilding : buildingList[0].name);
@@ -2587,9 +2605,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           bSel.disabled = false;
         }
         onInspBuildingChange();
-      }
-      if (!isTech) {
-        renderInspectionTables();
       }
     }
 
@@ -3003,10 +3018,10 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       if (!code) return;
       const fb = document.getElementById("papuaScanFeedback");
 
-      // Cari bundel yang sedang Dalam Pengiriman atau Siap Kirim berdasarkan Kode Tag Fisik atau Kode Item
+      // QC Incoming menggunakan kecocokan persis Kode Tag Fisik agar tidak salah memilih bundle.
       const candidates = logs.filter(l =>
         (l.statusTracking === "Dalam Pengiriman" || l.statusTracking === "Siap Kirim") &&
-        (String(l.tagBundel || "").toUpperCase() === code || String(l.kodeItem || "").toUpperCase() === code || String(l.tagBundel || "").toUpperCase().includes(code))
+        String(l.tagBundel || "").trim().toUpperCase() === code
       );
 
       document.getElementById("papuaBarcodeInput").value = "";
@@ -3019,8 +3034,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       } else if (candidates.length > 1) {
         papuaScanQuery = code;
         document.getElementById("btnResetPapuaScan").style.display = "inline-flex";
-        fb.className = "scan-feedback ok";
-        fb.textContent = `Ditemukan ${candidates.length} Kode Tag Fisik dengan kode "${code}". Silakan klik tombol "QC Incoming Papua" pada Kode Tag Fisik yang sesuai di tabel.`;
+        fb.className = "scan-feedback err";
+        fb.textContent = `Ditemukan lebih dari satu record dengan Kode Tag Fisik "${code}". Periksa data duplikat pada database sebelum melanjutkan.`;
         renderPapuaTracking();
       } else {
         // Cek apakah sudah pernah di-QC Incoming sebelumnya
@@ -3801,9 +3816,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       document.getElementById("papuaTglTerima").value = new Date().toISOString().split("T")[0];
       document.getElementById("papuaKondisi").value = "Lengkap & Mulus";
       document.getElementById("papuaCatatan").value = "";
-      capturedPhotos.papua = "";
-      const prev = document.getElementById("papuaPhotoPreview");
-      prev.src = ""; prev.style.display = "none";
       document.getElementById("papuaModal").classList.add("show");
     }
 
@@ -3812,7 +3824,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const tgl = document.getElementById("papuaTglTerima").value;
       const kondisi = document.getElementById("papuaKondisi").value;
       const cat = document.getElementById("papuaCatatan").value.trim();
-      if (!capturedPhotos.papua) { alert("Wajib mengambil foto bukti QC Incoming di Site Papua."); return; }
+      if (!tgl) { alert("Tanggal penerimaan wajib diisi."); return; }
 
       const btn = document.getElementById("btnSubmitPapua");
       btn.disabled = true; btn.textContent = "Menyimpan...";
@@ -3827,7 +3839,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         logs[idx].tglTerimaPapua = tgl;
         logs[idx].kondisiPapua = kondisi;
         logs[idx].catatanPapua = cat;
-        logs[idx].fotoIncomingPapua = capturedPhotos.papua;
         logs[idx].papuaBy = `${currentUser.nama} (${nowStr})`;
       }
 
@@ -3842,19 +3853,15 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
               tglTerimaPapua: tgl,
               kondisiPapua: kondisi,
               catatanPapua: cat,
-              fotoBase64: capturedPhotos.papua,
               userName: currentUser.nama
             })
           });
-          const data = await res.json();
-          if (data.status === "success" && data.fotoIncomingPapua && idx > -1) {
-            logs[idx].fotoIncomingPapua = data.fotoIncomingPapua;
-          }
+          await res.json();
         } catch (e) { console.warn(e); }
       }
 
       saveLocalAll();
-      btn.disabled = false; btn.textContent = "Simpan QC Incoming Papua";
+      btn.disabled = false; btn.textContent = "Konfirmasi Penerimaan";
       closeModal("papuaModal");
       renderPapuaTracking();
     }
@@ -4174,6 +4181,43 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
     }
 
     // ==================== PHOTO TRAIL VIEWER ====================
+    function getPhotoPreviewUrl(rawUrl) {
+      const url = String(rawUrl || "").trim();
+      if (!/^https?:\/\//i.test(url) && !/^data:image\//i.test(url)) return "";
+      if (/drive\.google\.com/i.test(url)) {
+        const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (match && match[1]) return `https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w1600`;
+      }
+      return url;
+    }
+
+    function getPhotoFullUrl(rawUrl) {
+      const url = String(rawUrl || "").trim();
+      if (!/^https?:\/\//i.test(url)) return "";
+      if (/drive\.google\.com/i.test(url)) {
+        const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (match && match[1]) return `https://drive.google.com/uc?export=view&id=${encodeURIComponent(match[1])}`;
+      }
+      return url;
+    }
+
+    function handlePhotoPreviewError(img) {
+      if (!img) return;
+      // Jika thumbnail Google Drive gagal, coba alamat file asli satu kali sebelum menampilkan pesan.
+      if (img.dataset.fallbackTried !== "1" && img.dataset.originalUrl) {
+        img.dataset.fallbackTried = "1";
+        try {
+          img.src = decodeURIComponent(img.dataset.originalUrl);
+          return;
+        } catch (e) {}
+      }
+      img.style.display = "none";
+      const wrap = img.closest(".photo-trail-image-wrap");
+      if (wrap) {
+        wrap.innerHTML = `<div class="photo-trail-image-fallback">Pratinjau foto tidak dapat dimuat.<br />Gunakan tautan <strong>Buka Ukuran Penuh</strong> di bawah untuk membuka file aslinya.</div>`;
+      }
+    }
+
     function openPhotoTrail(idLog) {
       const l = logs.find(x => x.idLog === idLog);
       if (!l) return;
@@ -4195,15 +4239,23 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       ].filter(s => s.url);
 
       document.getElementById("ptPhotosGrid").innerHTML = slots.length === 0
-        ? `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--slate-500);">Belum ada foto yang diunggah pada baris ini.</div>`
-        : slots.map(s => `
-          <div style="border:1px solid var(--border); border-radius:8px; padding:10px; background:var(--slate-50);">
-            <div style="font-size:0.76rem; font-weight:800; color:var(--navy); margin-bottom:6px;">${s.title}</div>
-            <img src="${s.url}" alt="${s.title}" style="width:100%; max-height:220px; object-fit:contain; border-radius:6px; background:#000;" />
-            <div style="font-size:0.73rem; color:var(--slate-600); margin-top:6px;">${s.note || "-"}</div>
-            ${s.url.startsWith("http") ? `<a href="${s.url}" target="_blank" style="font-size:0.73rem; color:var(--blue); display:inline-block; margin-top:4px;">Buka Ukuran Penuh &rarr;</a>` : ""}
-          </div>
-        `).join("");
+        ? `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--slate-500);">Belum ada foto yang diunggah pada log ini.</div>`
+        : slots.map(s => {
+          const previewUrl = getPhotoPreviewUrl(s.url);
+          const fullUrl = getPhotoFullUrl(s.url);
+          return `
+            <div class="photo-trail-card">
+              <div class="photo-trail-card-title">${s.title}</div>
+              <div class="photo-trail-image-wrap">
+                ${previewUrl
+                  ? `<img class="photo-trail-image" src="${previewUrl}" data-original-url="${encodeURIComponent(String(s.url || ""))}" alt="${s.title}" loading="lazy" onerror="handlePhotoPreviewError(this)" />`
+                  : `<div class="photo-trail-image-fallback">Alamat foto tidak valid atau tidak tersedia.</div>`}
+              </div>
+              <div class="photo-trail-note">${s.note || "-"}</div>
+              ${fullUrl ? `<a class="photo-trail-full-link" href="${fullUrl}" target="_blank" rel="noopener noreferrer">Buka Ukuran Penuh &rarr;</a>` : ""}
+            </div>
+          `;
+        }).join("");
 
       document.getElementById("photoTrailModal").classList.add("show");
     }
