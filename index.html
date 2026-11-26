@@ -288,6 +288,20 @@
     .kpi-sub { font-size: 0.71rem; color: var(--slate-500); }
 
     .table-wrap { overflow-x: auto; }
+    .table-wrap table.readable-guest-table { min-width: 1900px; }
+    .table-wrap table.readable-rework-table { min-width: 1250px; }
+    .table-wrap table.readable-log-table { min-width: 2350px; }
+    .table-wrap table.readable-tracking-table { min-width: 2050px; }
+    .table-wrap table.readable-guest-table td,
+    .table-wrap table.readable-rework-table td,
+    .table-wrap table.readable-log-table td,
+    .table-wrap table.readable-tracking-table td {
+      white-space: normal;
+      overflow-wrap: anywhere;
+      vertical-align: top;
+    }
+    .tag-code { display: inline-block; color: var(--navy); font-weight: 800; white-space: nowrap; }
+    .table-data-muted { display: block; color: var(--slate-500); font-size: 0.72rem; margin-top: 3px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
     th {
       background: var(--slate-50); color: var(--slate-700); font-weight: 700; text-align: left;
@@ -679,7 +693,7 @@
               <div class="card-header">
                 <div>
                   <div class="card-title">Data Log Inspeksi, Approval &amp; Tracking Material (Mode Guest — Lihat Data)</div>
-                  <div class="card-sub">Gunakan kolom pencarian untuk mencari berdasarkan Kode Item, Tag Bundel, Nama Item, Nomor Unit, Kontainer, atau Status</div>
+                  <div class="card-sub">Gunakan kolom pencarian untuk mencari berdasarkan Kode Item, Kode Tag Fisik, Nama Item, Nomor Unit, Kontainer, atau Status</div>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                   <input type="text" id="guestGlobalSearch" class="form-control" style="width:270px; padding:6px 10px; font-size:0.8rem;" placeholder="Cari Tag, Kode Item, Unit, Kontainer..." oninput="renderGuestDataTable()" />
@@ -694,16 +708,25 @@
                 </div>
               </div>
               <div class="table-wrap">
-                <table>
+                <table class="readable-guest-table">
                   <thead>
                     <tr>
-                      <th>Tag Bundel</th>
-                      <th>Bangunan &amp; Kode Item</th>
-                      <th>Nomor Unit &amp; Qty</th>
-                      <th>Status QA/QC &amp; Approval</th>
-                      <th>Status Pengiriman &amp; Kontainer</th>
-                      <th>Hasil QC Incoming Papua</th>
-                      <th>Catatan &amp; Petugas</th>
+                      <th>Kode Tag Fisik</th>
+                      <th>Periode</th>
+                      <th>Bangunan</th>
+                      <th>Kode Item</th>
+                      <th>Nama Item</th>
+                      <th>Nomor Unit</th>
+                      <th>Qty</th>
+                      <th>Status QC</th>
+                      <th>Status Approval</th>
+                      <th>Status Tracking</th>
+                      <th>No. Kontainer</th>
+                      <th>Kondisi QC Papua</th>
+                      <th>Tanggal Terima</th>
+                      <th>Catatan Inspeksi</th>
+                      <th>Petugas Input</th>
+                      <th>Waktu Input</th>
                       <th class="text-center">Dokumentasi</th>
                     </tr>
                   </thead>
@@ -732,7 +755,7 @@
                       <th class="text-center" style="width:40px;">No</th>
                       <th>Bangunan</th>
                       <th>Kode Item</th>
-                      <th>Deskripsi Item &amp; Section</th>
+                      <th>Nama / Deskripsi Item</th>
                       <th class="text-right">Berat Satuan</th>
                       <th class="text-right">Target BOQ</th>
                       <th class="text-right">Total Berat BOQ</th>
@@ -792,9 +815,9 @@
               <div class="card-header">
                 <div>
                   <div class="card-title">Form Input Inspeksi QA/QC — Workshop Jakarta</div>
-                  <div class="card-sub">Scan barcode fisik atau pilih kode item, pilih nomor satuan unit dari dropdown, dan ambil foto bukti</div>
+                  <div class="card-sub">Pilih item dan nomor unit, lalu ambil satu foto untuk kelompok unit yang diperiksa. Contoh OFC-K1-001: OFC = Office, K1 = kode item BOQ, 001 = nomor urut label. Kode ini bukan nomor unit; nomor unit asli tetap dicatat satu per satu.</div>
                 </div>
-                <span class="pill pill-blue" id="nextBundleBadge" style="font-size:0.82rem; padding:5px 12px;">Tag Berikutnya: OFC-UMP-A1-001</span>
+                <span class="pill pill-blue" id="nextBundleBadge" style="font-size:0.82rem; padding:5px 12px;">Kode Tag Fisik Berikutnya: OFC-UMP-A1-001</span>
               </div>
 
               <!-- FITUR SCAN BARCODE FISIK -> OTOMATIS PILIH ITEM & STATUS OK -->
@@ -858,7 +881,7 @@
                           </select>
                         </div>
                         <div style="display:flex; gap:5px; flex-wrap:wrap; align-items:center;">
-                          <label for="fBundleSize" style="font-size:0.73rem; font-weight:700; color:var(--slate-700);">Isi per Bundle</label>
+                          <label for="fBundleSize" style="font-size:0.73rem; font-weight:700; color:var(--slate-700);">Jumlah Unit per Kode Tag Fisik</label>
                           <input type="number" id="fBundleSize" class="form-control" min="1" value="10" style="width:68px; padding:5px 7px; font-size:0.78rem;" />
                           <button type="button" class="btn btn-primary btn-sm" onclick="selectBundleBySize()">Pilih Otomatis</button>
                           <button type="button" class="btn btn-light btn-sm" onclick="clearSelectedUnits()">Reset</button>
@@ -904,7 +927,7 @@
                         <button type="button" class="btn btn-dark btn-sm" onclick="openLiveCamera('insp')">Buka Kamera Live (Tanpa Galeri)</button>
                         <button type="button" class="btn btn-light btn-sm" onclick="triggerFallbackFile('insp')">Upload File Cadangan</button>
                       </div>
-                      <div style="font-size:0.71rem; color:var(--slate-500); margin-top:4px;">Otomatis diberi stempel watermark Tag Bundel, Kode Item, Petugas &amp; Jam WIB</div>
+                      <div style="font-size:0.71rem; color:var(--slate-500); margin-top:4px;">Otomatis diberi stempel watermark Kode Tag Fisik, Kode Item, Petugas &amp; Jam WIB</div>
                       <img id="inspPhotoPreview" class="cam-preview" alt="Hasil Foto Watermark" />
                       <input type="file" id="inspFallbackInput" accept="image/*" style="display:none" onchange="handleFallbackFile(event, 'insp')" />
                     </div>
@@ -912,7 +935,7 @@
                 </div>
 
                 <button type="submit" id="btnSubmitInsp" class="btn btn-primary" style="width:100%; padding:11px; font-size:0.88rem;">
-                  Simpan Hasil Inspeksi &amp; Terbitkan Tag Bundel
+                  Simpan Hasil Inspeksi &amp; Terbitkan Kode Tag Fisik
                 </button>
               </form>
             </div>
@@ -928,12 +951,15 @@
                   </div>
                 </div>
                 <div class="table-wrap">
-                  <table>
+                  <table class="readable-rework-table">
                     <thead>
                       <tr>
-                        <th>Tag Bundel</th>
-                        <th>Bangunan &amp; Item</th>
+                        <th>Kode Tag Fisik</th>
+                        <th>Bangunan</th>
+                        <th>Kode Item</th>
+                        <th>Nama Item</th>
                         <th>Nomor Unit NG</th>
+                        <th>Qty NG</th>
                         <th>Catatan Temuan NG</th>
                         <th class="text-center">Foto NG Awal</th>
                         <th class="text-center">Tindak Lanjut</th>
@@ -949,7 +975,7 @@
                 <div class="card-header">
                   <div>
                     <div class="card-title" id="logCardTitle">Log Inspeksi Harian &amp; Approval Atasan (Jakarta)</div>
-                    <div class="card-sub" id="logCardSub">Klik tombol Approve / Rework untuk memvalidasi bundel sebelum dikirim ke Papua</div>
+                    <div class="card-sub" id="logCardSub">Satu Kode Tag Fisik mewakili satu kelompok unit. Setiap nomor unit tetap tersimpan terpisah untuk perhitungan qty.</div>
                   </div>
                   <select id="filterLogApproval" class="form-control" style="width:auto; padding:5px 10px; font-size:0.78rem;" onchange="renderInspectionTables()">
                     <option value="ALL">Semua Status Approval</option>
@@ -959,7 +985,7 @@
                   </select>
                 </div>
                 <div class="table-wrap">
-                  <table>
+                  <table class="readable-log-table">
                     <thead id="logJakartaHead"></thead>
                     <tbody id="logJakartaBody"></tbody>
                   </table>
@@ -980,7 +1006,7 @@
               </div>
               <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
                 <button type="button" class="btn btn-dark" onclick="openBarcodeScanner('papua')">Scan Barcode Tagging (Kamera Live)</button>
-                <input type="text" id="papuaBarcodeInput" class="form-control" style="max-width:280px;" placeholder="Scan / Ketik Tag Bundel atau Kode Item..." onkeydown="if(event.key==='Enter'){event.preventDefault(); processPapuaBarcode(this.value);}" />
+                <input type="text" id="papuaBarcodeInput" class="form-control" style="max-width:280px;" placeholder="Scan / Ketik Kode Tag Fisik atau Kode Item..." onkeydown="if(event.key==='Enter'){event.preventDefault(); processPapuaBarcode(this.value);}" />
                 <button type="button" class="btn btn-primary" onclick="processPapuaBarcode(document.getElementById('papuaBarcodeInput').value)">Cari &amp; QC Incoming</button>
                 <button type="button" class="btn btn-light" id="btnResetPapuaScan" style="display:none;" onclick="resetPapuaScanFilter()">Tampilkan Semua</button>
               </div>
@@ -992,7 +1018,7 @@
               <div class="kpi-card green">
                 <div class="kpi-lbl">1. Siap Kirim (Approved JKT)</div>
                 <div class="kpi-val" id="cntSiapKirim">0</div>
-                <div class="kpi-sub">Bundel siap masuk kontainer</div>
+                <div class="kpi-sub">Kelompok unit siap masuk kontainer</div>
               </div>
               <div class="kpi-card blue">
                 <div class="kpi-lbl">2. Dalam Pengiriman (Shipping)</div>
@@ -1010,10 +1036,10 @@
               <div class="card-header">
                 <div>
                   <div class="card-title">Daftar Material Pengiriman (Jakarta &rarr; Papua) &amp; QC Incoming Papua</div>
-                  <div class="card-sub">Klik "QC Incoming Papua" pada baris bundel yang tiba atau scan barcode fisiknya di atas</div>
+                  <div class="card-sub">Kode Tag Fisik adalah satu barcode untuk satu kelompok unit. Scan kode tersebut untuk melihat identitas item, nomor unit, dan status pengirimannya.</div>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-                  <span id="selectedShipWeightBadge" class="pill pill-blue" style="display:none; font-size:0.76rem;">Terpilih: 0 Bundel (0 kg)</span>
+                  <span id="selectedShipWeightBadge" class="pill pill-blue" style="display:none; font-size:0.76rem;">Terpilih: 0 Kode Tag Fisik (0 kg)</span>
                   <select id="filterTrackingStage" class="form-control" style="width:auto; padding:5px 10px; font-size:0.78rem;" onchange="renderPapuaTracking()">
                     <option value="ALL">Semua Tahap</option>
                     <option value="Dalam Pengiriman">Dalam Pengiriman (Siap QC Incoming)</option>
@@ -1024,16 +1050,24 @@
                 </div>
               </div>
               <div class="table-wrap">
-                <table>
+                <table class="readable-tracking-table">
                   <thead>
                     <tr>
                       <th style="width:32px;"><input type="checkbox" id="chkAllShip" onclick="toggleAllShipCheck(this.checked)" /></th>
-                      <th>Tag Bundel</th>
-                      <th>Bangunan &amp; Item</th>
-                      <th>Unit, Qty &amp; Berat</th>
+                      <th>Kode Tag Fisik</th>
+                      <th>Bangunan</th>
+                      <th>Kode Item</th>
+                      <th>Nama Item</th>
+                      <th>Nomor Unit</th>
+                      <th>Qty</th>
+                      <th>Berat Total</th>
                       <th>Status Tracking</th>
-                      <th>Info Kontainer / Shipping</th>
-                      <th>Hasil QC Incoming Papua</th>
+                      <th>No. Kontainer</th>
+                      <th>Tanggal Berangkat</th>
+                      <th>Estimasi Tiba</th>
+                      <th>Kondisi QC Papua</th>
+                      <th>Tanggal Terima Papua</th>
+                      <th>Catatan QC Papua</th>
                       <th class="text-center">Foto Trail</th>
                       <th class="text-center">Aksi</th>
                     </tr>
@@ -1074,7 +1108,7 @@
           <input type="text" id="newBldgName" class="form-control" placeholder="Contoh: Warehouse" required />
         </div>
         <div class="form-group">
-          <label class="form-label">Kode Singkatan (3 Huruf untuk Tag Bundel)</label>
+          <label class="form-label">Kode Singkatan Area (digunakan pada Kode Tag Fisik)</label>
           <input type="text" id="newBldgCode" class="form-control" maxlength="5" placeholder="Contoh: WHS" style="text-transform:uppercase;" required />
         </div>
         <div class="modal-footer">
@@ -1088,8 +1122,8 @@
   <!-- ==================== MODAL: EDIT INPUT INSPEKSI / TAG UNIT ==================== -->
   <div id="inspectionEditModal" class="modal-backdrop">
     <div class="modal" style="max-width:560px;">
-      <div class="modal-title">Edit Input Inspeksi / Tag Bundle</div>
-      <div class="modal-desc" id="editInspectionModalDesc">Koreksi nomor unit, status QA/QC, catatan, dan welder.</div>
+      <div class="modal-title">Edit Input Inspeksi / Kode Tag Fisik</div>
+      <div class="modal-desc" id="editInspectionModalDesc">Koreksi nomor unit, status QA/QC, catatan inspeksi, dan welder untuk Kode Tag Fisik terpilih.</div>
       <input type="hidden" id="editInspectionLogId" />
       <div class="form-group">
         <label class="form-label">Nomor Unit (contoh: 001-005,008)</label>
@@ -1309,16 +1343,10 @@
         </div>
 
       </div>
-      <div class="grid-2">
         <div class="form-group">
           <label class="form-label">Nama / Deskripsi Item BOQ</label>
           <input type="text" id="bNama" class="form-control" placeholder="Kolom Utama WF 200x100" required />
         </div>
-        <div class="form-group">
-          <label class="form-label">Section / Kelompok Pekerjaan</label>
-          <input type="text" id="bSection" class="form-control" placeholder="Struktur Utama" required />
-        </div>
-      </div>
       <div class="grid-3">
         <div class="form-group">
           <label class="form-label">Satuan</label>
@@ -2284,30 +2312,39 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const pageRows = filtered.slice(startIdx, startIdx + PAGE_SIZE);
 
       document.getElementById("guestDataBody").innerHTML = pageRows.length === 0
-        ? `<tr><td colspan="8" class="text-center" style="padding:18px; color:var(--slate-500);">Data tidak ditemukan untuk kata kunci pencarian tersebut.</td></tr>`
+        ? `<tr><td colspan="17" class="text-center" style="padding:18px; color:var(--slate-500);">Data tidak ditemukan untuk kata kunci pencarian tersebut.</td></tr>`
         : pageRows.map(l => {
           let appPill = "pill-amber";
           if (l.statusApproval === "Approved") appPill = "pill-green";
           if (l.statusApproval === "Rework") appPill = "pill-red";
 
+          let qcPill = l.statusQc === "Rework" ? "pill-red" : (l.statusQc === "OK" ? "pill-green" : "pill-gray");
           let trkPill = "pill-gray";
           if (l.statusTracking === "Siap Kirim") trkPill = "pill-green";
           if (l.statusTracking === "Dalam Pengiriman") trkPill = "pill-blue";
           if (l.statusTracking === "QC Incoming Papua") trkPill = "pill-purple";
+          const inputAudit = getActorAuditParts(l.diinputOleh);
+          const hasPhoto = l.fotoQcOk || l.fotoTemuanNg || l.fotoAfterRepair || l.fotoShipping || l.fotoIncomingPapua;
 
           return `
             <tr>
-              <td><strong>${l.tagBundel}</strong><div style="font-size:0.7rem; color:var(--slate-500);">${l.minggu}</div></td>
-              <td><strong>${l.bangunan} • ${l.kodeItem}</strong><div style="font-size:0.73rem; color:var(--slate-500);">${l.namaItem}</div></td>
-              <td><strong>${l.qty} Unit</strong><div style="font-size:0.71rem; color:var(--slate-500); max-width:140px; word-break:break-all;">${l.unitList}</div></td>
-              <td><span class="pill ${appPill}">${l.statusApproval}</span></td>
-              <td>
-                <span class="pill ${trkPill}">${l.statusTracking}</span>
-                ${l.noKontainer ? `<div style="font-size:0.71rem; color:var(--slate-600); margin-top:2px;">Kontainer: <strong>${l.noKontainer}</strong></div>` : ""}
-              </td>
-              <td>${l.kondisiPapua ? `<span class="pill pill-green">${l.kondisiPapua}</span><div style="font-size:0.7rem; color:var(--slate-500);">${l.tglTerimaPapua}</div>` : `<span style="color:#94a3b8; font-size:0.74rem;">Belum tiba</span>`}</td>
-              <td style="font-size:0.75rem; max-width:200px;">${l.catatanInspeksi || "-"}<div style="font-size:0.69rem; color:var(--slate-500); margin-top:2px;">${l.diinputOleh}</div></td>
-              <td class="text-center"><button type="button" class="btn btn-light btn-sm" onclick="openPhotoTrail('${l.idLog}')">Lihat Foto</button></td>
+              <td><span class="tag-code">${l.tagBundel || "-"}</span></td>
+              <td>${l.minggu && l.minggu !== "-" ? l.minggu : "-"}</td>
+              <td>${l.bangunan || "-"}</td>
+              <td><strong>${l.kodeItem || "-"}</strong></td>
+              <td>${l.namaItem || "-"}</td>
+              <td>${l.unitList || "-"}</td>
+              <td class="text-right">${Number(l.qty) || 0}</td>
+              <td><span class="pill ${qcPill}">${l.statusQc || "-"}</span></td>
+              <td><span class="pill ${appPill}">${l.statusApproval || "-"}</span></td>
+              <td><span class="pill ${trkPill}">${l.statusTracking || "-"}</span></td>
+              <td>${l.noKontainer || "-"}</td>
+              <td>${l.kondisiPapua || "-"}</td>
+              <td>${l.tglTerimaPapua || "-"}</td>
+              <td>${l.catatanInspeksi || "-"}</td>
+              <td>${inputAudit.name}</td>
+              <td>${inputAudit.timestamp}</td>
+              <td class="text-center">${hasPhoto ? `<button type="button" class="btn btn-light btn-sm" onclick="openPhotoTrail('${l.idLog}')">Lihat Foto</button>` : `<span class="table-data-muted">Belum ada foto</span>`}</td>
             </tr>
           `;
         }).join("");
@@ -2354,7 +2391,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
               <td><strong>${b.kodeItem}</strong></td>
               <td>
                 <div style="font-weight:700; color:var(--navy);">${b.namaItem}</div>
-                <div style="font-size:0.72rem; color:var(--slate-500);">${b.section}</div>
               </td>
               <td class="text-right">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "<span style='color:#94a3b8;'>0 kg</span>"}</td>
               <td class="text-right"><strong>${b.target}</strong> ${b.satuan}</td>
@@ -2539,7 +2575,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         .filter(n => !isNaN(n));
       const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
       const nextTag = prefix + String(nextNum).padStart(3, "0");
-      document.getElementById("nextBundleBadge").textContent = `Tag Berikutnya: ${nextTag}`;
+      document.getElementById("nextBundleBadge").textContent = `Kode Tag Fisik Berikutnya: ${nextTag}`;
       document.getElementById("nextBundleBadge").dataset.tag = nextTag;
 
       selectedUnits.clear();
@@ -2695,7 +2731,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         if (!statusMap[numStr] && !selectedUnits.has(numStr)) selectedUnits.add(numStr);
       }
       if (selectedUnits.size < desiredCount) {
-        alert(`Hanya tersedia ${selectedUnits.size} unit Belum QC untuk bundle ini.`);
+        alert(`Hanya tersedia ${selectedUnits.size} unit Belum QC untuk kelompok unit ini.`);
       }
       renderUnitDropdownList();
     }
@@ -2777,7 +2813,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         : "Scan Barcode Tagging Fisik — QC Incoming Papua";
       document.getElementById("bcModalDesc").textContent = mode === "jakarta"
         ? "Arahkan kamera ke barcode sesuai Kode Item untuk langsung masuk ke form QC (OK)."
-        : "Arahkan kamera ke barcode Tag Bundel / Kode Item pada material yang tiba di Papua.";
+        : "Arahkan kamera ke barcode Kode Tag Fisik / Kode Item pada material yang tiba di Papua.";
 
       manualInp.value = "";
       modal.classList.add("show");
@@ -2914,7 +2950,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       if (!code) return;
       const fb = document.getElementById("papuaScanFeedback");
 
-      // Cari bundel yang sedang Dalam Pengiriman atau Siap Kirim berdasarkan Tag Bundel atau Kode Item
+      // Cari bundel yang sedang Dalam Pengiriman atau Siap Kirim berdasarkan Kode Tag Fisik atau Kode Item
       const candidates = logs.filter(l =>
         (l.statusTracking === "Dalam Pengiriman" || l.statusTracking === "Siap Kirim") &&
         (String(l.tagBundel || "").toUpperCase() === code || String(l.kodeItem || "").toUpperCase() === code || String(l.tagBundel || "").toUpperCase().includes(code))
@@ -2931,7 +2967,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         papuaScanQuery = code;
         document.getElementById("btnResetPapuaScan").style.display = "inline-flex";
         fb.className = "scan-feedback ok";
-        fb.textContent = `Ditemukan ${candidates.length} bundel dengan kode "${code}". Silakan klik tombol "QC Incoming Papua" pada bundel yang sesuai di tabel.`;
+        fb.textContent = `Ditemukan ${candidates.length} Kode Tag Fisik dengan kode "${code}". Silakan klik tombol "QC Incoming Papua" pada Kode Tag Fisik yang sesuai di tabel.`;
         renderPapuaTracking();
       } else {
         // Cek apakah sudah pernah di-QC Incoming sebelumnya
@@ -3054,29 +3090,41 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const prev = document.getElementById("inspPhotoPreview");
       prev.src = ""; prev.style.display = "none";
 
-      alert(`Tersimpan! Tag Bundel fisik: ${tagBundel} (${unitsArr.length} unit)`);
+      alert(`Tersimpan! Kode Tag Fisik: ${tagBundel} (${unitsArr.length} unit)`);
       onInspItemChange();
       if (!isTechnicianRole()) renderInspectionTables();
       renderSidebarNav();
 
       btn.disabled = false;
-      btn.textContent = "Simpan Hasil Inspeksi & Terbitkan Tag Bundel";
+      btn.textContent = "Simpan Hasil Inspeksi & Terbitkan Kode Tag Fisik";
+    }
+
+    function getActorAuditParts(value) {
+      const raw = String(value || "").trim();
+      const match = raw.match(/^(.*)\s+\(([^()]*)\)$/);
+      return {
+        name: match ? match[1].trim() : (raw || "-"),
+        timestamp: match ? match[2].trim() : "-"
+      };
     }
 
     function renderInspectionTables() {
       const sLogs = getScopedLogs();
       const isMgr = isManagerRole();
 
-      // 1. Antrean Rework
+      // 1. Antrean Rework: setiap informasi ditampilkan pada kolomnya sendiri.
       const rwList = sLogs.filter(l => l.statusApproval === "Rework");
       document.getElementById("reworkTableBody").innerHTML = rwList.length === 0
-        ? `<tr><td colspan="6" class="text-center" style="color:var(--slate-500); padding:14px;">Tidak ada item dalam antrean rework.</td></tr>`
+        ? `<tr><td colspan="9" class="text-center" style="color:var(--slate-500); padding:14px;">Tidak ada item dalam antrean rework.</td></tr>`
         : rwList.map(l => `
           <tr>
-            <td><strong>${l.tagBundel}</strong></td>
-            <td>${l.bangunan} • <strong>${l.kodeItem}</strong></td>
-            <td><span class="pill pill-red">${l.unitList} (${l.qty})</span></td>
-            <td style="font-size:0.78rem;">${l.catatanInspeksi || "-"}</td>
+            <td><span class="tag-code">${l.tagBundel || "-"}</span></td>
+            <td>${l.bangunan || "-"}</td>
+            <td><strong>${l.kodeItem || "-"}</strong></td>
+            <td>${l.namaItem || "-"}</td>
+            <td>${l.unitList || "-"}</td>
+            <td class="text-right">${Number(l.qty) || 0}</td>
+            <td>${l.catatanInspeksi || "-"}</td>
             <td class="text-center">
               ${l.fotoTemuanNg ? `<button class="btn btn-light btn-sm" onclick="openPhotoTrail('${l.idLog}')">Lihat Foto NG</button>` : `<span style="font-size:0.72rem; color:#94a3b8;">-</span>`}
             </td>
@@ -3088,15 +3136,26 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           </tr>
         `).join("");
 
-      // 2. Log Inspeksi
+      // 2. Log Inspeksi: kode, lokasi, item, unit, catatan, petugas dan status dipisah.
       document.getElementById("logJakartaHead").innerHTML = `
         <tr>
-          <th>Tag Bundel &amp; Minggu</th>
-          <th>Bangunan &amp; Kode Item</th>
-          <th>Unit &amp; Qty</th>
-          <th>Catatan, Welder &amp; Petugas</th>
+          <th>Kode Tag Fisik</th>
+          <th>Periode</th>
+          <th>Bangunan</th>
+          <th>Kode Item</th>
+          <th>Nama Item</th>
+          <th>Nomor Unit</th>
+          <th>Qty</th>
+          <th>Status QC</th>
+          <th>Catatan Inspeksi</th>
+          <th>Catatan Perbaikan</th>
+          <th>Welder</th>
+          <th>Petugas Input</th>
+          <th>Waktu Input</th>
+          <th>Status Approval</th>
+          <th>Disetujui Oleh</th>
+          <th>Waktu Approval</th>
           <th class="text-center">Dokumentasi Foto</th>
-          <th>Status</th>
           ${isMgr ? `<th class="text-center">Aksi</th>` : ""}
         </tr>
       `;
@@ -3105,47 +3164,44 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const filtered = sLogs.filter(l => filterApp === "ALL" || l.statusApproval === filterApp);
 
       document.getElementById("logJakartaBody").innerHTML = filtered.length === 0
-        ? `<tr><td colspan="${isMgr ? 7 : 6}" class="text-center" style="color:var(--slate-500); padding:16px;">Belum ada data log inspeksi pada filter ini.</td></tr>`
+        ? `<tr><td colspan="${isMgr ? 18 : 17}" class="text-center" style="color:var(--slate-500); padding:16px;">Belum ada data log inspeksi pada filter ini.</td></tr>`
         : filtered.map(l => {
-          let pillCls = "pill-amber";
-          if (l.statusApproval === "Approved") pillCls = "pill-green";
-          if (l.statusApproval === "Rework") pillCls = "pill-red";
-
-          const hasAnyPhoto = l.fotoQcOk || l.fotoTemuanNg || l.fotoAfterRepair;
+          let qcPill = l.statusQc === "Rework" ? "pill-red" : (l.statusQc === "OK" ? "pill-green" : "pill-gray");
+          let appPill = "pill-amber";
+          if (l.statusApproval === "Approved") appPill = "pill-green";
+          if (l.statusApproval === "Rework") appPill = "pill-red";
+          const inputAudit = getActorAuditParts(l.diinputOleh);
+          const approvalAudit = getActorAuditParts(l.approvedBy);
+          const hasAnyPhoto = l.fotoQcOk || l.fotoTemuanNg || l.fotoAfterRepair || l.fotoShipping || l.fotoIncomingPapua;
           return `
             <tr>
-              <td>
-                <div style="font-weight:800; color:var(--navy);">${l.tagBundel}</div>
-                <span class="pill pill-blue">${l.minggu}</span>
-              </td>
-              <td>
-                <div style="font-weight:700;">${l.bangunan} — ${l.kodeItem}</div>
-                <div style="font-size:0.74rem; color:var(--slate-500);">${l.namaItem}</div>
-              </td>
-              <td>
-                <div style="font-weight:700;">${l.qty} Unit</div>
-                <div style="font-size:0.72rem; color:var(--slate-500); max-width:130px; word-break:break-all;">${l.unitList}</div>
-              </td>
-              <td style="max-width:210px; font-size:0.77rem;">
-                <div>${l.catatanInspeksi || "-"}</div>
-                ${l.welder ? `<div style="color:var(--blue-dark); margin-top:2px;"><strong>Welder:</strong> ${l.welder}</div>` : ""}
-                ${l.catatanRepair ? `<div style="color:var(--green-dark); margin-top:2px;"><strong>Perbaikan:</strong> ${l.catatanRepair}</div>` : ""}
-                <div style="color:var(--slate-500); font-size:0.7rem; margin-top:3px;">Input: ${l.diinputOleh}</div>
-              </td>
+              <td><span class="tag-code">${l.tagBundel || "-"}</span></td>
+              <td>${l.minggu && l.minggu !== "-" ? l.minggu : "-"}</td>
+              <td>${l.bangunan || "-"}</td>
+              <td><strong>${l.kodeItem || "-"}</strong></td>
+              <td>${l.namaItem || "-"}</td>
+              <td>${l.unitList || "-"}</td>
+              <td class="text-right">${Number(l.qty) || 0}</td>
+              <td><span class="pill ${qcPill}">${l.statusQc || "-"}</span></td>
+              <td>${l.catatanInspeksi || "-"}</td>
+              <td>${l.catatanRepair || "-"}</td>
+              <td>${l.welder || "-"}</td>
+              <td>${inputAudit.name}</td>
+              <td>${inputAudit.timestamp}</td>
+              <td><span class="pill ${appPill}">${l.statusApproval || "-"}</span></td>
+              <td>${approvalAudit.name !== "-" ? approvalAudit.name : "-"}</td>
+              <td>${approvalAudit.timestamp}</td>
               <td class="text-center">
                 ${hasAnyPhoto
-                  ? `<button class="btn btn-light btn-sm" onclick="openPhotoTrail('${l.idLog}')">Lihat Foto (${[l.fotoQcOk, l.fotoTemuanNg, l.fotoAfterRepair].filter(Boolean).length})</button>`
-                  : `<span style="font-size:0.72rem; color:#94a3b8;">Demo (No Img)</span>`}
-              </td>
-              <td>
-                <span class="pill ${pillCls}">${l.statusApproval}</span>
-                ${l.approvedBy && l.approvedBy !== "-" ? `<div style="font-size:0.7rem; color:var(--slate-500); margin-top:3px;">${l.approvedBy}</div>` : ""}
+                  ? `<button class="btn btn-light btn-sm" onclick="openPhotoTrail('${l.idLog}')">Lihat Foto</button>`
+                  : `<span style="font-size:0.72rem; color:#94a3b8;">Belum ada foto</span>`}
               </td>
               ${isMgr ? `
                 <td class="text-center">
                   <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
                     <button class="btn btn-light btn-sm" onclick="openInspectionEditModal('${l.idLog}')">Edit Input</button>
                     <button class="btn ${l.statusApproval === 'Approved' ? 'btn-light' : 'btn-success'} btn-sm" onclick="openApproveModal('${l.idLog}')">${l.statusApproval === 'Approved' ? 'Ubah Approval' : 'Approve'}</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteInspectionLog('${l.idLog}')">Hapus</button>
                   </div>
                 </td>
               ` : ""}
@@ -3160,7 +3216,14 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const log = logs.find(l => l.idLog === idLog);
       if (!log) return;
       document.getElementById("editInspectionLogId").value = idLog;
-      document.getElementById("editInspectionModalDesc").textContent = `${log.tagBundel} • ${log.bangunan} — ${log.kodeItem} (${log.qty} unit)`;
+      document.getElementById("editInspectionModalDesc").innerHTML = `
+        <div><strong>Kode Tag Fisik:</strong> ${log.tagBundel}</div>
+        <div><strong>Bangunan:</strong> ${log.bangunan}</div>
+        <div><strong>Kode Item:</strong> ${log.kodeItem}</div>
+        <div><strong>Nama Item:</strong> ${log.namaItem || "-"}</div>
+        <div><strong>Nomor Unit:</strong> ${log.unitList || "-"}</div>
+        <div><strong>Qty:</strong> ${Number(log.qty) || 0} unit</div>
+      `;
       document.getElementById("editInspectionUnitList").value = log.unitList || "";
       document.getElementById("editInspectionStatus").value = log.statusQc || "OK";
       document.getElementById("editInspectionNote").value = log.catatanInspeksi || "";
@@ -3168,11 +3231,11 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       document.getElementById("editInspectionWelderWrap").style.display = isWelderBuilding(log.bangunan) ? "block" : "none";
       const trackingAdvanced = ["Dalam Pengiriman", "QC Incoming Papua"].includes(log.statusTracking);
       document.getElementById("editInspectionUnitHint").textContent = trackingAdvanced
-        ? "Bundle sudah masuk tahap pengiriman / penerimaan. Nomor unit tidak dapat diubah; koreksi catatan dan welder masih dapat dilakukan."
+        ? "Kode Tag Fisik sudah masuk tahap pengiriman / penerimaan. Nomor unit tidak dapat diubah; koreksi catatan dan welder masih dapat dilakukan."
         : "Gunakan daftar nomor dipisahkan koma atau rentang, misalnya 001-005,008.";
       document.getElementById("editInspectionUnitList").disabled = !!trackingAdvanced;
       document.getElementById("editInspectionStatus").disabled = !!trackingAdvanced;
-      document.getElementById("editInspectionCloudNote").textContent = "Perubahan akan disimpan pada browser ini. Dukungan simpan ke Google Sheets bergantung pada action updateInspection di Apps Script yang terpasang.";
+      document.getElementById("editInspectionCloudNote").textContent = "Perubahan akan disimpan pada Google Sheets dan ditampilkan kembali setelah sinkronisasi.";
       document.getElementById("inspectionEditModal").classList.add("show");
     }
 
@@ -3203,7 +3266,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const nextStatus = document.getElementById("editInspectionStatus").value;
       const nextUnitList = units.join(",");
       if (trackingAdvanced && (nextUnitList !== String(oldLog.unitList || "") || nextStatus !== oldLog.statusQc)) {
-        alert("Nomor unit dan status QC tidak dapat diubah setelah bundle masuk tahap pengiriman atau QC Incoming Papua.");
+        alert("Nomor unit dan status QC tidak dapat diubah setelah Kode Tag Fisik masuk tahap pengiriman atau QC Incoming Papua.");
         return;
       }
 
@@ -3213,7 +3276,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           .forEach(l => String(l.unitList || "").split(",").map(v => v.trim()).filter(Boolean).forEach(v => alreadyUsed.add(v)));
         const conflicts = units.filter(unit => alreadyUsed.has(unit));
         if (conflicts.length) {
-          alert(`Nomor unit berikut sudah tercatat pada tag bundle lain: ${conflicts.join(", ")}.`);
+          alert(`Nomor unit berikut sudah tercatat pada kode tag fisik lain: ${conflicts.join(", ")}.`);
           return;
         }
       }
@@ -3285,12 +3348,65 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         : "Koreksi inspeksi tersimpan pada browser ini. Google Apps Script belum mengonfirmasi dukungan action updateInspection, sehingga perubahan belum dapat dipastikan tersimpan ke Google Sheets atau perangkat lain.");
     }
 
+    async function deleteInspectionLog(idLog) {
+      if (!isManagerRole()) return;
+      const log = logs.find(item => item.idLog === idLog);
+      if (!log) return;
+
+      const trackingNote = ["Dalam Pengiriman", "QC Incoming Papua"].includes(log.statusTracking)
+        ? "\n\nPERHATIAN: Kode ini sudah memiliki riwayat pengiriman / QC Incoming Papua. Penghapusan akan menghilangkan log tersebut dari daftar tracking aplikasi."
+        : "";
+      const message = `Hapus log inspeksi untuk Kode Tag Fisik ${log.tagBundel}?\n\nBangunan: ${log.bangunan}\nKode Item: ${log.kodeItem}\nNomor Unit: ${log.unitList}\nQty: ${log.qty} unit${trackingNote}\n\nData log akan dihapus dari Google Sheets. File foto yang sudah tersimpan di Google Drive tidak otomatis dihapus. Tindakan ini tidak dapat dibatalkan.`;
+      if (!confirm(message)) return;
+
+      if (apiUrl && apiUrl.startsWith("http")) {
+        try {
+          const res = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              action: "deleteInspection",
+              idLog,
+              userName: currentUser.nama
+            })
+          });
+          const data = await res.json();
+          if (data.status !== "success") {
+            alert(data.message || "Google Apps Script gagal menghapus log inspeksi. Data lokal tidak diubah.");
+            return;
+          }
+        } catch (err) {
+          console.error("Delete inspection failed:", err);
+          alert("Log inspeksi belum dihapus karena koneksi ke Google Sheets gagal. Periksa koneksi lalu coba lagi.");
+          return;
+        }
+      }
+
+      logs = logs.filter(item => item.idLog !== idLog);
+      selectedShipIds.delete(idLog);
+      delete inspectionOverrides[idLog];
+      localStorage.setItem("tangguh_v2_inspection_overrides", JSON.stringify(inspectionOverrides));
+      saveLocalAll();
+
+      renderInspectionTables();
+      renderDashboard();
+      renderPapuaTracking();
+      renderGuestDataTable();
+      renderSidebarNav();
+      alert("Log inspeksi berhasil dihapus dari database.");
+    }
+
     // Rework Resolution Modal
     function openReworkModal(idLog) {
       const log = logs.find(l => l.idLog === idLog);
       if (!log) return;
       document.getElementById("rwLogId").value = idLog;
-      document.getElementById("rwModalDesc").textContent = `Tag: ${log.tagBundel} (${log.bangunan} — ${log.kodeItem}, Unit: ${log.unitList})`;
+      document.getElementById("rwModalDesc").innerHTML = `
+        <div><strong>Kode Tag Fisik:</strong> ${log.tagBundel}</div>
+        <div><strong>Bangunan:</strong> ${log.bangunan}</div>
+        <div><strong>Kode Item:</strong> ${log.kodeItem}</div>
+        <div><strong>Nomor Unit:</strong> ${log.unitList || "-"}</div>
+      `;
       document.getElementById("rwOldNgNote").textContent = `Temuan NG: ${log.catatanInspeksi || "-"}`;
       const oldImg = document.getElementById("rwOldNgImg");
       if (log.fotoTemuanNg) {
@@ -3361,7 +3477,13 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const log = logs.find(l => l.idLog === idLog);
       if (!log) return;
       document.getElementById("appLogId").value = idLog;
-      document.getElementById("appModalDesc").textContent = `Tag Bundel: ${log.tagBundel} | ${log.bangunan} — ${log.kodeItem} (${log.qty} Unit)`;
+      document.getElementById("appModalDesc").innerHTML = `
+        <div><strong>Kode Tag Fisik:</strong> ${log.tagBundel}</div>
+        <div><strong>Bangunan:</strong> ${log.bangunan}</div>
+        <div><strong>Kode Item:</strong> ${log.kodeItem}</div>
+        <div><strong>Nama Item:</strong> ${log.namaItem || "-"}</div>
+        <div><strong>Qty:</strong> ${Number(log.qty) || 0} unit</div>
+      `;
       document.getElementById("appUserLabel").textContent = currentUser.nama;
       document.getElementById("approveModal").classList.add("show");
     }
@@ -3432,7 +3554,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         if (l) totalKg += getBundleWeightKg(l);
       });
       badge.style.display = "inline-block";
-      badge.textContent = `Terpilih: ${selectedShipIds.size} Bundel (${formatWeightPlain(totalKg)})`;
+      badge.textContent = `Terpilih: ${selectedShipIds.size} Kode Tag Fisik (${formatWeightPlain(totalKg)})`;
     }
 
     function renderPapuaTracking() {
@@ -3462,24 +3584,16 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       });
 
       document.getElementById("trackingTableBody").innerHTML = filtered.length === 0
-        ? `<tr><td colspan="9" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada bundel Approved yang siap dikirim atau sedang dalam tracking.</td></tr>`
+        ? `<tr><td colspan="17" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada material Approved yang siap dikirim atau sedang dalam tracking.</td></tr>`
         : filtered.map(l => {
           const isSiap = l.statusTracking === "Siap Kirim";
           const isShip = l.statusTracking === "Dalam Pengiriman";
           const isDone = l.statusTracking === "QC Incoming Papua";
-          const bundleKg = getBundleWeightKg(l);
+          const totalBerat = getBundleWeightKg(l);
 
-          let stPill = `<span class="pill pill-green">1. Siap Kirim (Approved JKT)</span>`;
-          if (isShip) stPill = `<span class="pill pill-blue">2. Dalam Pengiriman</span>`;
-          if (isDone) stPill = `<span class="pill pill-purple">3. QC Incoming Papua (Diterima)</span>`;
-
-          const shipInfo = l.noKontainer
-            ? `<div><strong>${l.noKontainer}</strong></div><div style="font-size:0.72rem; color:var(--slate-500);">Brkt: ${l.tglBerangkat} | Est: ${l.estimasiTiba || '-'}</div>`
-            : `<span style="font-size:0.74rem; color:#94a3b8;">Menunggu jadwal kontainer</span>`;
-
-          const papuaInfo = isDone
-            ? `<span class="pill ${l.kondisiPapua === 'Lengkap & Mulus' ? 'pill-green' : 'pill-amber'}">${l.kondisiPapua}</span><div style="font-size:0.72rem; color:var(--slate-600); margin-top:2px;">Tgl: ${l.tglTerimaPapua} • ${l.catatanPapua || '-'}</div>`
-            : `<span style="font-size:0.74rem; color:#94a3b8;">Belum diterima di site</span>`;
+          let statusTracking = `<span class="pill pill-green">Siap Kirim (Approved Jakarta)</span>`;
+          if (isShip) statusTracking = `<span class="pill pill-blue">Dalam Pengiriman</span>`;
+          if (isDone) statusTracking = `<span class="pill pill-purple">QC Incoming Papua</span>`;
 
           let actionBtn = `<span style="font-size:0.72rem; color:var(--slate-500);">Selesai</span>`;
           if (currentUser.bisaInput) {
@@ -3499,15 +3613,20 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           return `
             <tr>
               <td>${isSiap && currentUser.bisaInput ? `<input type="checkbox" class="ship-chk" value="${l.idLog}" ${selectedShipIds.has(l.idLog) ? 'checked' : ''} onchange="toggleShipCheck('${l.idLog}', this.checked)" />` : ""}</td>
-              <td><strong>${l.tagBundel}</strong></td>
-              <td>${l.bangunan} • <strong>${l.kodeItem}</strong><div style="font-size:0.72rem; color:var(--slate-500);">${l.namaItem}</div></td>
-              <td>
-                <div><strong>${l.qty}</strong> Unit • <span style="color:var(--blue-dark); font-weight:700;">${formatWeightPlain(bundleKg)}</span></div>
-                <div style="font-size:0.71rem; color:var(--slate-500);">${l.unitList}</div>
-              </td>
-              <td>${stPill}</td>
-              <td>${shipInfo}</td>
-              <td>${papuaInfo}</td>
+              <td><span class="tag-code">${l.tagBundel || "-"}</span></td>
+              <td>${l.bangunan || "-"}</td>
+              <td><strong>${l.kodeItem || "-"}</strong></td>
+              <td>${l.namaItem || "-"}</td>
+              <td>${l.unitList || "-"}</td>
+              <td class="text-right">${Number(l.qty) || 0}</td>
+              <td class="text-right">${formatWeightPlain(totalBerat)}</td>
+              <td>${statusTracking}</td>
+              <td>${l.noKontainer || "-"}</td>
+              <td>${l.tglBerangkat || "-"}</td>
+              <td>${l.estimasiTiba || "-"}</td>
+              <td>${l.kondisiPapua || "-"}</td>
+              <td>${l.tglTerimaPapua || "-"}</td>
+              <td>${l.catatanPapua || "-"}</td>
               <td class="text-center"><button class="btn btn-light btn-sm" onclick="openPhotoTrail('${l.idLog}')">Jejak Foto</button></td>
               <td class="text-center">${actionBtn}</td>
             </tr>
@@ -3539,7 +3658,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
 
     function openShippingModal() {
       if (selectedShipIds.size === 0) {
-        alert("Centang minimal 1 bundel berstatus 'Siap Kirim' terlebih dahulu.");
+        alert("Centang minimal 1 Kode Tag Fisik berstatus 'Siap Kirim' terlebih dahulu.");
         return;
       }
       let totalKg = 0;
@@ -3548,7 +3667,10 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         if (l) totalKg += getBundleWeightKg(l);
         return l ? l.tagBundel : id;
       });
-      document.getElementById("shipModalDesc").textContent = `Bundel yang dikirim (${tags.length}): ${tags.join(", ")}`;
+      document.getElementById("shipModalDesc").innerHTML = `
+        <div><strong>Kode Tag Fisik yang dikirim:</strong> ${tags.length} kode</div>
+        <div style="margin-top:5px;">${tags.map(tag => `<div>${tag}</div>`).join("")}</div>
+      `;
       document.getElementById("shipWeightSummaryBox").textContent = `Total Estimasi Berat Muatan Kontainer: ${formatWeightPlain(totalKg)}`;
       document.getElementById("shipNoKontainer").value = "";
       document.getElementById("shipTglBerangkat").value = new Date().toISOString().split("T")[0];
@@ -3616,7 +3738,15 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const l = logs.find(x => x.idLog === idLog);
       if (!l) return;
       document.getElementById("papuaLogId").value = idLog;
-      document.getElementById("papuaModalDesc").textContent = `Tag: ${l.tagBundel} | Kontainer: ${l.noKontainer || 'Direct'} | ${l.qty} Unit (${l.kodeItem})`;
+      document.getElementById("papuaModalDesc").innerHTML = `
+        <div><strong>Kode Tag Fisik:</strong> ${l.tagBundel}</div>
+        <div><strong>Bangunan:</strong> ${l.bangunan}</div>
+        <div><strong>Kode Item:</strong> ${l.kodeItem}</div>
+        <div><strong>Nama Item:</strong> ${l.namaItem || "-"}</div>
+        <div><strong>Nomor Unit:</strong> ${l.unitList || "-"}</div>
+        <div><strong>Qty:</strong> ${Number(l.qty) || 0} unit</div>
+        <div><strong>No. Kontainer:</strong> ${l.noKontainer || "Direct / Belum ditetapkan"}</div>
+      `;
       document.getElementById("papuaTglTerima").value = new Date().toISOString().split("T")[0];
       document.getElementById("papuaKondisi").value = "Lengkap & Mulus";
       document.getElementById("papuaCatatan").value = "";
@@ -3767,7 +3897,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         const uArr = Array.from(selectedUnits).sort();
         const uTxt = uArr.length > 0 ? `${uArr[0]}..${uArr[uArr.length-1]} (${uArr.length} Unit)` : "0 Unit";
         return [
-          `LNG TANGGUH — BANGUNAN ${bldg} | TAG: ${tag}`,
+          `LNG TANGGUH — BANGUNAN ${bldg} | KODE TAG FISIK: ${tag}`,
           `ITEM: ${kode} | UNIT: ${uTxt} | STATUS: ${st}`,
           `INSPEKTOR: ${userStr} | ${ts}`
         ];
@@ -3784,7 +3914,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         const noCont = document.getElementById("shipNoKontainer").value || "KONTAINER";
         return [
           `LNG TANGGUH — SHIPPING JAKARTA -> SITE PAPUA`,
-          `NO. KONTAINER / SJ: ${noCont} (${selectedShipIds.size} Bundel)`,
+          `NO. KONTAINER / SJ: ${noCont} (${selectedShipIds.size} Kode Tag Fisik)`,
           `PETUGAS: ${userStr} | ${ts}`
         ];
       }
@@ -3857,7 +3987,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         document.getElementById("bKode").value = b.kodeItem;
         // Kode warna dipertahankan dari data existing, tetapi tidak lagi diedit melalui form.
         document.getElementById("bNama").value = b.namaItem;
-        document.getElementById("bSection").value = b.section;
         document.getElementById("bSatuan").value = b.satuan;
         document.getElementById("bTarget").value = b.target;
         document.getElementById("bBerat").value = Number(b.beratSatuan) || 0;
@@ -3876,7 +4005,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         document.getElementById("bKode").value = "";
 
         document.getElementById("bNama").value = "";
-        document.getElementById("bSection").value = "Struktur Utama";
         document.getElementById("bSatuan").value = "Batang";
         document.getElementById("bTarget").value = 20;
         document.getElementById("bBerat").value = 0;
@@ -3925,7 +4053,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         bangunan,
         kodeItem,
         namaItem,
-        section: document.getElementById("bSection").value.trim(),
         warna: existing ? (existing.warna || "Belum Ditentukan / Tanpa Warna") : "Belum Ditentukan / Tanpa Warna",
         satuan: document.getElementById("bSatuan").value.trim(),
         target: Number(document.getElementById("bTarget").value) || 0,
@@ -3997,7 +4124,13 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const l = logs.find(x => x.idLog === idLog);
       if (!l) return;
       document.getElementById("ptModalTitle").textContent = `Jejak Dokumentasi Foto — ${l.tagBundel}`;
-      document.getElementById("ptModalSub").textContent = `${l.bangunan} • ${l.kodeItem} (${l.namaItem}) | Unit: ${l.unitList}`;
+      document.getElementById("ptModalSub").innerHTML = `
+        <div><strong>Kode Tag Fisik:</strong> ${l.tagBundel}</div>
+        <div><strong>Bangunan:</strong> ${l.bangunan}</div>
+        <div><strong>Kode Item:</strong> ${l.kodeItem}</div>
+        <div><strong>Nama Item:</strong> ${l.namaItem || "-"}</div>
+        <div><strong>Nomor Unit:</strong> ${l.unitList || "-"}</div>
+      `;
 
       const slots = [
         { title: "1. Foto Temuan NG Awal (Workshop)", url: l.fotoTemuanNg, note: l.catatanInspeksi },
@@ -4047,7 +4180,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           <tr>
             <td style="text-align:center;">${idx + 1}</td>
             <td><strong>${b.kodeItem}</strong><br><small style="color:#475569;">${b.bangunan}</small></td>
-            <td>${b.namaItem}<br><small style="color:#475569;">${b.section}</small></td>
+            <td>${b.namaItem}</td>
             <td style="text-align:right;">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "-"}</td>
             <td style="text-align:right;"><strong>${b.target}</strong> ${b.satuan}</td>
             <td style="text-align:right;">${totBerat > 0 ? formatWeightPlain(totBerat) : "-"}</td>
@@ -4061,15 +4194,21 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       }).join("");
 
       const bundleRows = sLogs.length === 0
-        ? `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:10px;">Belum ada rincian tag bundel tercatat.</td></tr>`
+        ? `<tr><td colspan="13" style="text-align:center; color:#64748b; padding:10px;">Belum ada rincian Kode Tag Fisik tercatat.</td></tr>`
         : sLogs.map((l, idx) => `
           <tr>
             <td style="text-align:center;">${idx + 1}</td>
             <td><strong>${l.tagBundel}</strong></td>
-            <td>${l.kodeItem} (${l.bangunan})</td>
-            <td>${l.unitList} (${l.qty} Unit • ${formatWeightPlain(getBundleWeightKg(l))})</td>
-            <td>${l.statusApproval}</td>
-            <td>${l.statusTracking}${l.noKontainer ? ` (${l.noKontainer})` : ""}</td>
+            <td>${l.bangunan || "-"}</td>
+            <td>${l.kodeItem || "-"}</td>
+            <td>${l.namaItem || "-"}</td>
+            <td>${l.unitList || "-"}</td>
+            <td style="text-align:right;">${Number(l.qty) || 0}</td>
+            <td style="text-align:right;">${formatWeightPlain(getBundleWeightKg(l))}</td>
+            <td>${l.statusQc || "-"}</td>
+            <td>${l.statusApproval || "-"}</td>
+            <td>${l.statusTracking || "-"}</td>
+            <td>${l.noKontainer || "-"}</td>
             <td>${l.kondisiPapua || "-"}</td>
           </tr>
         `).join("");
@@ -4107,17 +4246,23 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           </tfoot>
         </table>
 
-        <div class="p-sec-title">2. Rincian Tag Bundel, Status Approval &amp; Tracking Pengiriman</div>
+        <div class="p-sec-title">2. Rincian Kode Tag Fisik, Unit, Approval &amp; Tracking Pengiriman</div>
         <table class="p-table">
           <thead>
             <tr>
               <th style="width:28px; text-align:center;">No</th>
-              <th>Tag Bundel</th>
+              <th>Kode Tag Fisik</th>
+              <th>Bangunan</th>
               <th>Kode Item</th>
-              <th>Nomor Unit, Qty &amp; Berat</th>
-              <th>Approval Jakarta</th>
+              <th>Nama Item</th>
+              <th>Nomor Unit</th>
+              <th>Qty</th>
+              <th>Berat Total</th>
+              <th>Status QC</th>
+              <th>Status Approval</th>
               <th>Status Tracking</th>
-              <th>QC Incoming Papua</th>
+              <th>No. Kontainer</th>
+              <th>Kondisi QC Papua</th>
             </tr>
           </thead>
           <tbody>${bundleRows}</tbody>
