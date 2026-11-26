@@ -136,6 +136,15 @@
       font-size: 0.66rem; padding: 2px 6px; border-radius: 4px;
       background: rgba(0,0,0,0.25); font-weight: 700;
     }
+    .bldg-row { display:flex; align-items:center; gap:5px; }
+    .bldg-row .bldg-btn { flex:1; min-width:0; }
+    .bldg-actions { display:flex; gap:3px; }
+    .bldg-icon-btn {
+      width:27px; height:29px; padding:0; border:1px solid rgba(255,255,255,0.18);
+      border-radius:6px; background:rgba(255,255,255,0.06); color:#cbd5e1;
+      font-size:0.78rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+    }
+    .bldg-icon-btn:hover { background:rgba(255,255,255,0.16); color:#fff; }
 
     /* Sidebar Navigation */
     .nav-section-title {
@@ -468,22 +477,23 @@
     .modal-desc { font-size: 0.8rem; color: var(--slate-500); margin-bottom: 14px; }
     .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
-    /* Dynamic Week Inputs Grid inside BOQ Modal */
-    .week-plan-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
-      gap: 6px;
-      background: var(--slate-50);
-      border: 1px solid var(--border);
-      padding: 8px;
-      border-radius: 8px;
+    .dash-unit-details { display:inline-block; min-width:52px; }
+    .dash-unit-details summary {
+      cursor:pointer; list-style:none; display:inline-flex; align-items:center; justify-content:center;
+      gap:5px; border:1px solid var(--border); border-radius:7px; padding:4px 8px;
+      background:var(--slate-50); color:var(--amber); font-weight:800;
     }
-    .week-plan-cell label {
-      display: block; font-size: 0.68rem; font-weight: 700; color: var(--slate-600); text-align: center; margin-bottom: 2px;
+    .dash-unit-details summary::-webkit-details-marker { display:none; }
+    .dash-unit-details[open] summary { border-color:var(--blue); color:var(--blue-dark); }
+    .dash-unit-panel {
+      min-width:250px; max-width:360px; max-height:230px; overflow:auto; margin-top:6px;
+      padding:10px; border:1px solid var(--border); border-radius:8px; background:#fff;
+      box-shadow:0 5px 14px rgba(15,23,42,0.12); white-space:normal; text-align:left;
     }
-    .week-plan-cell input {
-      padding: 5px 6px; font-size: 0.8rem; text-align: center;
-    }
+    .dash-unit-group { margin-bottom:8px; }
+    .dash-unit-group:last-child { margin-bottom:0; }
+    .dash-unit-group strong { display:block; font-size:0.72rem; margin-bottom:3px; }
+    .dash-unit-group span { display:block; font-size:0.72rem; color:var(--slate-600); line-height:1.5; word-break:break-word; }
 
     /* ================= REPORT PREVIEW & PRINT A4 BOQ REPORT ================= */
     .p-head { border-bottom: 2.5px solid #0f172a; padding-bottom: 10px; margin-bottom: 14px; }
@@ -706,36 +716,12 @@
 
           <!-- ==================== MENU 2: KELOLA MASTER BOQ & DOCUMENT CONTROL (KHUSUS PM / SE) ==================== -->
           <section id="secDocControl" style="display:none;">
-            <!-- PENGATURAN DURASI MINGGU DINAMIS -->
-            <div class="card" style="border-left: 4px solid var(--blue);">
-              <div class="card-header">
-                <div>
-                  <div class="card-title">Pengaturan Durasi Proyek (Jumlah Minggu Dinamis)</div>
-                  <div class="card-sub">Ubah jumlah minggu kapan saja (misal 4, 6, 8, atau 12 Minggu). Otomatis memperbarui Plan Mingguan dan Form Input QC Jakarta.</div>
-                </div>
-                <span class="pill pill-blue" id="activeWeeksBadge" style="font-size:0.8rem; padding:4px 10px;">Durasi Aktif: 4 Minggu</span>
-              </div>
-              <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                  <button type="button" class="btn btn-light btn-sm" onclick="setQuickWeeks(4)">4 Minggu</button>
-                  <button type="button" class="btn btn-light btn-sm" onclick="setQuickWeeks(6)">6 Minggu</button>
-                  <button type="button" class="btn btn-light btn-sm" onclick="setQuickWeeks(8)">8 Minggu</button>
-                  <button type="button" class="btn btn-light btn-sm" onclick="setQuickWeeks(12)">12 Minggu</button>
-                </div>
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <label for="inpTotalWeeks" style="font-size:0.8rem; font-weight:700; color:var(--slate-700);">Custom Minggu:</label>
-                  <input type="number" id="inpTotalWeeks" class="form-control" style="width:85px; padding:6px 8px;" min="1" max="52" value="4" />
-                  <button type="button" class="btn btn-primary btn-sm" id="btnSaveWeeks" onclick="saveProjectWeeks()">Simpan Durasi &amp; Sinkronkan</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- TABEL KELOLA ITEM BOQ (TAMBAH, EDIT, HAPUS, BERAT, WARNA) -->
+            <!-- TABEL KELOLA ITEM BOQ -->
             <div class="card">
               <div class="card-header">
                 <div>
                   <div class="card-title">Daftar Item Material BOQ (Per Area Bangunan)</div>
-                  <div class="card-sub">Kelola item material, berat satuan (kg), kode warna modul, dan target mingguan</div>
+                  <div class="card-sub">Kelola item material, berat satuan (kg), dan target BOQ</div>
                 </div>
                 <button class="btn btn-primary" id="btnAddBoqDoc" onclick="openBoqModal(null)">+ Tambah Item Material</button>
               </div>
@@ -747,11 +733,9 @@
                       <th>Bangunan</th>
                       <th>Kode Item</th>
                       <th>Deskripsi Item &amp; Section</th>
-                      <th>Kode Warna</th>
                       <th class="text-right">Berat Satuan</th>
                       <th class="text-right">Target BOQ</th>
                       <th class="text-right">Total Berat BOQ</th>
-                      <th>Rencana Mingguan</th>
                       <th class="text-center" style="width:130px;">Aksi</th>
                     </tr>
                   </thead>
@@ -759,6 +743,28 @@
                   <tfoot id="boqManageTableFoot"></tfoot>
                 </table>
               </div>
+              <div class="pagination-bar" id="boqManagePagination"></div>
+            </div>
+
+            <div class="card" id="welderSettingsCard">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Pengaturan Nama Welder</div>
+                  <div class="card-sub">Nama pilihan welder pada form inspeksi Office dan Workshop</div>
+                </div>
+              </div>
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="welderName1">Nama Welder 1</label>
+                  <input type="text" id="welderName1" class="form-control" value="Welder 1" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="welderName2">Nama Welder 2</label>
+                  <input type="text" id="welderName2" class="form-control" value="Welder 2" />
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary" onclick="saveWelderNames()">Simpan Nama Welder</button>
+              <div id="welderSettingsFeedback" style="font-size:0.73rem; color:var(--slate-500); margin-top:7px;"></div>
             </div>
 
             <!-- KATALOG GAMBAR STANDAR DOCUMENT CONTROL -->
@@ -806,7 +812,7 @@
               </div>
 
               <form id="inspForm" onsubmit="submitInspectionForm(event)">
-                <div class="grid-3">
+                <div class="grid-2">
                   <div class="form-group" id="formBldgSelectWrap">
                     <label class="form-label">Area Bangunan</label>
                     <select id="fInspBangunan" class="form-control" onchange="onInspBuildingChange()"></select>
@@ -814,10 +820,6 @@
                   <div class="form-group">
                     <label class="form-label">Pilih Kode Item BOQ</label>
                     <select id="fInspKode" class="form-control" onchange="onInspItemChange()" required></select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Periode Minggu</label>
-                    <select id="fInspMinggu" class="form-control"></select>
                   </div>
                 </div>
 
@@ -855,11 +857,18 @@
                             <option value="REWORK">Rework (NG)</option>
                           </select>
                         </div>
-                        <div style="display:flex; gap:5px; flex-wrap:wrap;">
-                          <button type="button" class="btn btn-primary btn-sm" onclick="selectNextAvailableUnits(10)">+ Pilih 10 Belum QC</button>
+                        <div style="display:flex; gap:5px; flex-wrap:wrap; align-items:center;">
+                          <label for="fBundleSize" style="font-size:0.73rem; font-weight:700; color:var(--slate-700);">Isi per Bundle</label>
+                          <input type="number" id="fBundleSize" class="form-control" min="1" value="10" style="width:68px; padding:5px 7px; font-size:0.78rem;" />
+                          <button type="button" class="btn btn-primary btn-sm" onclick="selectBundleBySize()">Pilih Otomatis</button>
                           <button type="button" class="btn btn-light btn-sm" onclick="clearSelectedUnits()">Reset</button>
                           <button type="button" class="btn btn-dark btn-sm" onclick="toggleUnitDropdown(false)">Selesai</button>
                         </div>
+                      </div>
+                      <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+                        <input type="text" id="unitRangeInp" class="form-control" style="max-width:230px; padding:6px 8px; font-size:0.78rem;" placeholder="Rentang unit: 001-005,008" />
+                        <button type="button" class="btn btn-light btn-sm" onclick="selectUnitsByRange()">Pilih Rentang / Nomor</button>
+                        <span style="font-size:0.7rem; color:var(--slate-500);">Pemilihan manual tetap tersedia pada daftar unit.</span>
                       </div>
                       <div class="unit-dd-list" id="unitDropdownList"></div>
                     </div>
@@ -870,6 +879,10 @@
 
                 <div class="grid-2">
                   <div>
+                    <div class="form-group" id="welderSelectWrap" style="display:none;">
+                      <label class="form-label">Pilih Welder</label>
+                      <select id="fInspWelder" class="form-control"></select>
+                    </div>
                     <div class="form-group">
                       <label class="form-label">Hasil Pemeriksaan QA/QC</label>
                       <select id="fInspStatusQc" class="form-control" onchange="refreshLiveWatermarkPreview()">
@@ -1053,7 +1066,7 @@
   <!-- ==================== MODAL: TAMBAH AREA BANGUNAN BARU ==================== -->
   <div id="addBuildingModal" class="modal-backdrop">
     <div class="modal" style="max-width:440px;">
-      <div class="modal-title">Tambah Sistem Area Bangunan Baru</div>
+      <div class="modal-title" id="buildingModalTitle">Tambah Sistem Area Bangunan Baru</div>
       <div class="modal-desc">Tambahkan area bangunan baru selain Office &amp; Workshop (misal: Warehouse, Power House, Guard House).</div>
       <form onsubmit="saveNewBuilding(event)">
         <div class="form-group">
@@ -1066,9 +1079,45 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-light" onclick="closeModal('addBuildingModal')">Batal</button>
-          <button type="submit" class="btn btn-primary">Simpan Area Bangunan</button>
+          <button type="submit" class="btn btn-primary" id="buildingModalSaveText">Simpan Area Bangunan</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: EDIT INPUT INSPEKSI / TAG UNIT ==================== -->
+  <div id="inspectionEditModal" class="modal-backdrop">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-title">Edit Input Inspeksi / Tag Bundle</div>
+      <div class="modal-desc" id="editInspectionModalDesc">Koreksi nomor unit, status QA/QC, catatan, dan welder.</div>
+      <input type="hidden" id="editInspectionLogId" />
+      <div class="form-group">
+        <label class="form-label">Nomor Unit (contoh: 001-005,008)</label>
+        <input type="text" id="editInspectionUnitList" class="form-control" placeholder="001-005,008" required />
+        <div id="editInspectionUnitHint" style="font-size:0.72rem; color:var(--slate-500); margin-top:4px;"></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Status QA/QC</label>
+          <select id="editInspectionStatus" class="form-control">
+            <option value="OK">LOLOS QA/QC (OK)</option>
+            <option value="Rework">REWORK (NG)</option>
+          </select>
+        </div>
+        <div class="form-group" id="editInspectionWelderWrap">
+          <label class="form-label">Welder</label>
+          <select id="editInspectionWelder" class="form-control"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Catatan Teknis Inspeksi</label>
+        <textarea id="editInspectionNote" class="form-control" rows="3"></textarea>
+      </div>
+      <div id="editInspectionCloudNote" style="font-size:0.72rem; color:var(--slate-500);"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" onclick="closeModal('inspectionEditModal')">Batal</button>
+        <button type="button" class="btn btn-primary" id="btnSaveInspectionEdit" onclick="saveInspectionEdit()">Simpan Perubahan</button>
+      </div>
     </div>
   </div>
 
@@ -1258,18 +1307,7 @@
           <label class="form-label">Kode Item</label>
           <input type="text" id="bKode" class="form-control" placeholder="Contoh: K1" required />
         </div>
-        <div class="form-group">
-          <label class="form-label">Kode Warna Modul (Opsional)</label>
-          <select id="bWarna" class="form-control">
-            <option value="Merah">Merah</option>
-            <option value="Biru">Biru</option>
-            <option value="Kuning">Kuning</option>
-            <option value="Hijau">Hijau</option>
-            <option value="Abu-abu">Abu-abu</option>
-            <option value="Oranye">Oranye</option>
-            <option value="Belum Ditentukan / Tanpa Warna">Belum Ditentukan / Tanpa Warna</option>
-          </select>
-        </div>
+
       </div>
       <div class="grid-2">
         <div class="form-group">
@@ -1297,14 +1335,6 @@
         </div>
       </div>
 
-      <!-- PLAN KUMULATIF DINAMIS SESUAI TOTAL MINGGU -->
-      <div class="form-group">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <label class="form-label" style="margin-bottom:0;" id="bPlanLabel">Rencana Kumulatif per Minggu (W1 s/d W4)</label>
-          <button type="button" class="btn btn-light btn-sm" onclick="autoDistributePlan()">Isi Otomatis Merata ke Target</button>
-        </div>
-        <div class="week-plan-grid" id="bWeekPlanInputs"></div>
-      </div>
 
       <div class="form-group">
         <label class="form-label">Catatan Standar Teknis (Tampil ke Teknisi Saat Input)</label>
@@ -1361,7 +1391,6 @@
 
     let apiUrl = localStorage.getItem("tangguh_v2_api_url") || DEFAULT_API_URL;
     let currentUser = JSON.parse(localStorage.getItem("tangguh_v2_user")) || null;
-    let totalWeeks = parseInt(localStorage.getItem("tangguh_v2_weeks"), 10) || 4;
     let activeBuilding = "Office";
     let activeMenu = "dashboard";
 
@@ -1371,11 +1400,18 @@
       { name: "Workshop", code: "WKS" }
     ];
     let buildingList = JSON.parse(localStorage.getItem("tangguh_v2_buildings")) || defaultBuildings;
+    let buildingListOverride = JSON.parse(localStorage.getItem("tangguh_v2_buildings_local_override")) || null;
+    let buildingRenameMap = JSON.parse(localStorage.getItem("tangguh_v2_building_rename_map")) || {};
+    let editingBuildingOriginalName = null;
+    let welderNames = JSON.parse(localStorage.getItem("tangguh_v2_welder_names")) || ["Welder 1", "Welder 2"];
+    let welderNamesOverride = JSON.parse(localStorage.getItem("tangguh_v2_welder_names_local_override")) || null;
+    let inspectionOverrides = JSON.parse(localStorage.getItem("tangguh_v2_inspection_overrides")) || {};
 
     // Pagination state (Max 10 per halaman)
     const PAGE_SIZE = 10;
     let dashBoqPage = 1;
     let guestDataPage = 1;
+    let docBoqPage = 1;
 
     // Unit selector state
     let selectedUnits = new Set();
@@ -1472,6 +1508,7 @@
 
     let boqItems = JSON.parse(localStorage.getItem("tangguh_v2_boq")) || defaultBoqItems;
     let logs = JSON.parse(localStorage.getItem("tangguh_v2_logs")) || defaultLogs;
+    logs = logs.map(log => inspectionOverrides[log.idLog] ? {...log, ...inspectionOverrides[log.idLog]} : log);
 
     // Helper Roles
     function isManagerRole() {
@@ -1491,26 +1528,13 @@
       return String(bldgName || "BLD").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase();
     }
 
-    // Helper: Ambil array rencana mingguan terstandar sesuai totalWeeks
-    function getItemPlans(item) {
-      let arr = [];
-      if (Array.isArray(item.plans) && item.plans.length > 0) {
-        arr = item.plans.map(n => Number(n) || 0);
-      } else {
-        arr = [
-          Number(item.planW1) || 0,
-          Number(item.planW2) || 0,
-          Number(item.planW3) || 0,
-          Number(item.planW4) || 0
-        ];
-      }
-      const target = Number(item.target) || 0;
-      while (arr.length < totalWeeks) {
-        arr.push(target);
-      }
-      return arr.slice(0, totalWeeks);
+    function isWelderBuilding(bldgName) {
+      const name = String(bldgName || "").toLowerCase();
+      const code = getBuildingCode(bldgName);
+      return name === "office" || name === "workshop" || code === "OFC" || code === "WKS";
     }
 
+    // Helper: Format Berat kg & Ton
     // Helper: Format Berat kg & Ton
     function formatWeightHtml(totalKg, isZeroLabel) {
       const kg = Number(totalKg) || 0;
@@ -1685,10 +1709,18 @@
       }
 
       document.getElementById("bldgSwitcher").innerHTML = options.map(opt => `
-        <button class="bldg-btn ${activeBuilding === opt.id ? 'active' : ''}" onclick="setBuilding('${opt.id}')">
-          <span>${opt.label}</span>
-          <span class="bldg-tag">${opt.tag}</span>
-        </button>
+        <div class="bldg-row">
+          <button class="bldg-btn ${activeBuilding === opt.id ? 'active' : ''}" onclick="setBuilding('${opt.id}')">
+            <span>${opt.label}</span>
+            <span class="bldg-tag">${opt.tag}</span>
+          </button>
+          ${isManagerRole() && opt.id !== "Gabungan" ? `
+            <div class="bldg-actions">
+              <button type="button" class="bldg-icon-btn" title="Edit area" aria-label="Edit area ${opt.label}" onclick="event.stopPropagation(); openEditBuildingModal('${opt.id}')">&#9998;</button>
+              <button type="button" class="bldg-icon-btn" title="Hapus area" aria-label="Hapus area ${opt.label}" onclick="event.stopPropagation(); deleteBuilding('${opt.id}')">&#128465;</button>
+            </div>
+          ` : ""}
+        </div>
       `).join("");
     }
 
@@ -1701,9 +1733,46 @@
     }
 
     function openAddBuildingModal() {
+      editingBuildingOriginalName = null;
+      document.getElementById("buildingModalTitle").textContent = "Tambah Sistem Area Bangunan Baru";
+      document.getElementById("buildingModalSaveText").textContent = "Simpan Area Bangunan";
       document.getElementById("newBldgName").value = "";
       document.getElementById("newBldgCode").value = "";
       document.getElementById("addBuildingModal").classList.add("show");
+    }
+
+    function openEditBuildingModal(buildingName) {
+      if (!isManagerRole()) return;
+      const building = buildingList.find(b => b.name === buildingName);
+      if (!building) return;
+      editingBuildingOriginalName = building.name;
+      document.getElementById("buildingModalTitle").textContent = `Edit Area Bangunan: ${building.name}`;
+      document.getElementById("buildingModalSaveText").textContent = "Simpan Perubahan Area";
+      document.getElementById("newBldgName").value = building.name;
+      document.getElementById("newBldgCode").value = building.code;
+      document.getElementById("addBuildingModal").classList.add("show");
+    }
+
+    function saveBuildingListOverride() {
+      buildingListOverride = buildingList.map(b => ({...b}));
+      localStorage.setItem("tangguh_v2_buildings_local_override", JSON.stringify(buildingListOverride));
+      localStorage.setItem("tangguh_v2_buildings", JSON.stringify(buildingList));
+    }
+
+    async function sendBuildingMutation(action, payload) {
+      if (!apiUrl || !apiUrl.startsWith("http")) return false;
+      try {
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action, ...payload })
+        });
+        const data = await res.json();
+        return data.status === "success";
+      } catch (err) {
+        console.warn("Building update fallback to local storage:", err);
+        return false;
+      }
     }
 
     async function saveNewBuilding(e) {
@@ -1712,8 +1781,50 @@
       const code = document.getElementById("newBldgCode").value.trim().toUpperCase();
       if (!name || !code) return;
 
-      if (buildingList.some(b => b.name.toLowerCase() === name.toLowerCase())) {
+      const duplicateName = buildingList.some(b => b.name.toLowerCase() === name.toLowerCase() && b.name !== editingBuildingOriginalName);
+      if (duplicateName) {
         alert(`Area bangunan "${name}" sudah terdaftar.`);
+        return;
+      }
+      const duplicateCode = buildingList.some(b => String(b.code || "").toUpperCase() === code && b.name !== editingBuildingOriginalName);
+      if (duplicateCode) {
+        alert(`Kode area "${code}" sudah digunakan oleh area lain.`);
+        return;
+      }
+
+      if (editingBuildingOriginalName) {
+        const oldName = editingBuildingOriginalName;
+        const index = buildingList.findIndex(b => b.name === oldName);
+        if (index < 0) return;
+        buildingList[index] = { name, code };
+        if (oldName !== name) {
+          Object.keys(buildingRenameMap).forEach(key => {
+            if (buildingRenameMap[key] === oldName) buildingRenameMap[key] = name;
+          });
+          buildingRenameMap[oldName] = name;
+          localStorage.setItem("tangguh_v2_building_rename_map", JSON.stringify(buildingRenameMap));
+          boqItems = boqItems.map(item => item.bangunan === oldName ? {...item, bangunan: name} : item);
+          logs = logs.map(log => log.bangunan === oldName ? {...log, bangunan: name} : log);
+          Object.keys(inspectionOverrides).forEach(id => {
+            if (inspectionOverrides[id].bangunan === oldName) inspectionOverrides[id].bangunan = name;
+          });
+          localStorage.setItem("tangguh_v2_inspection_overrides", JSON.stringify(inspectionOverrides));
+          if (activeBuilding === oldName) activeBuilding = name;
+        }
+        saveLocalAll();
+        saveBuildingListOverride();
+        const savedCloud = await sendBuildingMutation("updateBuilding", { oldName, name, code });
+        if (savedCloud) {
+          buildingListOverride = null;
+          localStorage.removeItem("tangguh_v2_buildings_local_override");
+        }
+        closeModal("addBuildingModal");
+        renderBuildingSwitcher();
+        refreshActiveView();
+        alert(savedCloud
+          ? `Area bangunan berhasil diperbarui menjadi ${name} (${code}).`
+          : `Area bangunan diperbarui pada browser ini menjadi ${name} (${code}). Sinkronisasi cloud belum dikonfirmasi oleh Google Apps Script.`);
+        editingBuildingOriginalName = null;
         return;
       }
 
@@ -1733,6 +1844,37 @@
       closeModal("addBuildingModal");
       setBuilding(name);
       alert(`Area bangunan "${name}" (${code}) berhasil ditambahkan!`);
+    }
+
+    async function deleteBuilding(buildingName) {
+      if (!isManagerRole()) return;
+      const building = buildingList.find(b => b.name === buildingName);
+      if (!building) return;
+      if (buildingList.length <= 1) {
+        alert("Minimal harus ada satu area bangunan yang tersisa.");
+        return;
+      }
+      const linkedBoq = boqItems.filter(b => b.bangunan === buildingName).length;
+      const linkedLogs = logs.filter(l => l.bangunan === buildingName).length;
+      const promptText = `Hapus area bangunan "${building.name}" (${building.code})?
+
+Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log inspeksi (${linkedLogs} bundel) yang sudah ada tidak ikut dihapus.`;
+      if (!confirm(promptText)) return;
+
+      buildingList = buildingList.filter(b => b.name !== buildingName);
+      if (activeBuilding === buildingName) activeBuilding = isManagerRole() ? "Gabungan" : buildingList[0].name;
+      saveLocalAll();
+      saveBuildingListOverride();
+      const savedCloud = await sendBuildingMutation("deleteBuilding", { name: buildingName, code: building.code });
+      if (savedCloud) {
+        buildingListOverride = null;
+        localStorage.removeItem("tangguh_v2_buildings_local_override");
+      }
+      renderBuildingSwitcher();
+      refreshActiveView();
+      alert(savedCloud
+        ? `Area bangunan "${buildingName}" berhasil dihapus.`
+        : `Area bangunan "${buildingName}" dihapus dari browser ini. Sinkronisasi cloud belum dikonfirmasi oleh Google Apps Script. Data BOQ dan log inspeksi tetap dipertahankan.`);
     }
 
     function populateBuildingSelect(selectId, selectedVal) {
@@ -1831,7 +1973,7 @@
       const titles = {
         dashboard: "Dashboard Monitoring & Rekapitulasi BOQ",
         guestData: "Data Log Inspeksi & Tracking Material (Mode Guest)",
-        doc: "Kelola Master BOQ, Berat, Durasi Minggu & Document Control",
+        doc: "Kelola BOQ & Document Control",
         inspection: currentUser.role === "PM"
           ? "Verifikasi & Approval Fabrikasi Jakarta"
           : (isManagerRole() ? "Input Inspeksi QA/QC & Approval Jakarta" : "Input Inspeksi QA/QC — Workshop Jakarta"),
@@ -1890,12 +2032,46 @@
       renderDashboard();
     }
 
+    function getUnitProgressDetails(bldg, kode, target, sourceLogs = logs) {
+      const statusMap = {};
+      const related = sourceLogs.filter(l => l.bangunan === bldg && l.kodeItem === kode);
+      // Proses dari log lama ke log terbaru agar catatan terbaru menjadi status unit aktif.
+      related.slice().sort((a, b) => getInspectionLogTimestamp(a) - getInspectionLogTimestamp(b)).forEach(log => {
+        const units = String(log.unitList || "").split(",").map(v => v.trim()).filter(Boolean);
+        units.forEach(unit => {
+          let state = "belum";
+          if (log.statusQc === "Rework" || log.statusApproval === "Rework") state = "rework";
+          else if (log.statusTracking === "QC Incoming Papua") state = "papua";
+          else if (log.statusApproval === "Approved") state = "approved";
+          else if (log.statusQc === "OK") state = "qc";
+          statusMap[unit] = { state, tag: log.tagBundel || "-" };
+        });
+      });
+
+      const result = { qc: [], approved: [], papua: [], rework: [], belum: [] };
+      for (let i = 1; i <= (Number(target) || 0); i++) {
+        const unit = String(i).padStart(3, "0");
+        const info = statusMap[unit];
+        if (!info) result.belum.push(unit);
+        else if (info.state === "qc") result.qc.push(unit);
+        else if (info.state === "approved") result.approved.push(unit);
+        else if (info.state === "papua") result.papua.push(unit);
+        else if (info.state === "rework") result.rework.push(unit);
+        else result.belum.push(unit);
+      }
+      return result;
+    }
+
+    function renderUnitDetailGroup(title, units, emptyText) {
+      return `<div class="dash-unit-group"><strong>${title} (${units.length})</strong><span>${units.length ? units.join(", ") : emptyText}</span></div>`;
+    }
+
     function renderDashboard() {
       const sBoq = getScopedBoq();
       const sLogs = getScopedLogs();
 
       const totalTarget = sBoq.reduce((s, b) => s + Number(b.target || 0), 0);
-      const totalOk = sLogs.filter(l => l.statusQc === "OK").reduce((s, l) => s + Number(l.qty || 0), 0);
+      const totalOk = sLogs.filter(l => l.statusQc === "OK" && l.statusApproval !== "Rework").reduce((s, l) => s + Number(l.qty || 0), 0);
       const totalWaitApp = sLogs.filter(l => l.statusApproval === "Menunggu Approval").reduce((s, l) => s + Number(l.qty || 0), 0);
       const totalAppJkt = sLogs.filter(l => l.statusApproval === "Approved").reduce((s, l) => s + Number(l.qty || 0), 0);
       const totalRework = sLogs.filter(l => l.statusApproval === "Rework").reduce((s, l) => s + Number(l.qty || 0), 0);
@@ -1936,29 +2112,25 @@
         </div>
       `;
 
-      // Filter khusus berdasarkan Kode Item saja
       const qKode = (document.getElementById("dashSearchKode").value || "").trim().toLowerCase();
       const filteredBoq = qKode
         ? sBoq.filter(b => String(b.kodeItem || "").toLowerCase().includes(qKode))
         : sBoq;
 
-      // Hitung total keseluruhan dari item yang terfilter
       let sumTargetBerat = 0;
       let sumAppBerat = 0;
       filteredBoq.forEach(b => {
-        const iLogs = sLogs.filter(l => l.bangunan === b.bangunan && l.kodeItem === b.kodeItem);
-        const appQty = iLogs.filter(l => l.statusApproval === "Approved").reduce((s, l) => s + Number(l.qty || 0), 0);
+        const details = getUnitProgressDetails(b.bangunan, b.kodeItem, b.target, sLogs);
+        const appQty = details.approved.length + details.papua.length;
         const bSatuan = Number(b.beratSatuan) || 0;
         sumTargetBerat += bSatuan * Number(b.target || 0);
         sumAppBerat += bSatuan * appQty;
       });
 
-      // Pagination Maksimal 10 Item
       const totalItems = filteredBoq.length;
       const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
       if (dashBoqPage > totalPages) dashBoqPage = totalPages;
       if (dashBoqPage < 1) dashBoqPage = 1;
-
       const startIdx = (dashBoqPage - 1) * PAGE_SIZE;
       const pageItems = filteredBoq.slice(startIdx, startIdx + PAGE_SIZE);
 
@@ -1966,20 +2138,26 @@
         ? `<tr><td colspan="12" class="text-center" style="padding:18px; color:var(--slate-500);">Kode item "${qKode}" tidak ditemukan pada area ini.</td></tr>`
         : pageItems.map(b => {
           const iLogs = sLogs.filter(l => l.bangunan === b.bangunan && l.kodeItem === b.kodeItem);
-          const okQty = iLogs.filter(l => l.statusQc === "OK").reduce((s, l) => s + Number(l.qty || 0), 0);
-          const appQty = iLogs.filter(l => l.statusApproval === "Approved").reduce((s, l) => s + Number(l.qty || 0), 0);
-          const waitQty = iLogs.filter(l => l.statusApproval === "Menunggu Approval").reduce((s, l) => s + Number(l.qty || 0), 0);
-          const rwQty = iLogs.filter(l => l.statusApproval === "Rework").reduce((s, l) => s + Number(l.qty || 0), 0);
-          const papuaQty = iLogs.filter(l => l.statusTracking === "QC Incoming Papua").reduce((s, l) => s + Number(l.qty || 0), 0);
-          const sisa = Math.max(0, Number(b.target) - okQty);
+          const details = getUnitProgressDetails(b.bangunan, b.kodeItem, b.target, sLogs);
+          const okQty = details.qc.length + details.approved.length + details.papua.length;
+          const appQty = details.approved.length + details.papua.length;
+          const waitQty = details.qc.length;
+          const rwQty = details.rework.length;
+          const papuaQty = details.papua.length;
+          const sisa = details.belum.length + details.rework.length;
 
           const bSatuan = Number(b.beratSatuan) || 0;
           const totalBeratItem = bSatuan * Number(b.target || 0);
-
           const t = Number(b.target) || 1;
           const pApp = Math.min(100, (appQty / t) * 100);
           const pWait = Math.min(100 - pApp, (waitQty / t) * 100);
           const pRw = Math.min(100 - pApp - pWait, (rwQty / t) * 100);
+
+          const doneHtml = renderUnitDetailGroup("Tiba Papua", details.papua, "Tidak ada unit.") +
+            renderUnitDetailGroup("Approved Jakarta", details.approved, "Tidak ada unit.") +
+            renderUnitDetailGroup("Sudah QC (Menunggu Approval)", details.qc, "Tidak ada unit.");
+          const pendingHtml = renderUnitDetailGroup("Belum QC", details.belum, "Tidak ada unit.") +
+            renderUnitDetailGroup("Rework / Belum Lolos", details.rework, "Tidak ada unit.");
 
           return `
             <tr>
@@ -1993,7 +2171,17 @@
               <td class="text-right" style="color:var(--green-dark); font-weight:700;">${appQty}</td>
               <td class="text-right" style="color:${rwQty > 0 ? 'var(--red)' : 'var(--slate-400)'}; font-weight:700;">${rwQty}</td>
               <td class="text-right" style="color:var(--purple); font-weight:700;">${papuaQty}</td>
-              <td class="text-right" style="color:${sisa > 0 ? 'var(--amber)' : 'var(--green)'}; font-weight:700;">${sisa}</td>
+              <td class="text-right" style="color:${sisa > 0 ? 'var(--amber)' : 'var(--green)'}; font-weight:700;">
+                <details class="dash-unit-details">
+                  <summary>${sisa} <span style="font-size:0.65rem;">Rincian</span></summary>
+                  <div class="dash-unit-panel">
+                    <div style="font-size:0.76rem; font-weight:800; margin-bottom:7px; color:var(--green-dark);">Sudah (${okQty})</div>
+                    ${doneHtml}
+                    <div style="font-size:0.76rem; font-weight:800; margin:8px 0 7px; color:var(--amber);">Belum / Sisa (${sisa})</div>
+                    ${pendingHtml}
+                  </div>
+                </details>
+              </td>
               <td>
                 <div class="stacked-bar" title="Approved: ${appQty}, Menunggu: ${waitQty}, Rework: ${rwQty}">
                   <div class="sb-app" style="width:${pApp}%"></div>
@@ -2099,82 +2287,41 @@
       `;
     }
 
-    // ==================== MENU 2: KELOLA MASTER BOQ, BERAT, MINGGU & DOC CONTROL ====================
-    function setQuickWeeks(n) {
-      document.getElementById("inpTotalWeeks").value = n;
-    }
-
-    async function saveProjectWeeks() {
-      const val = parseInt(document.getElementById("inpTotalWeeks").value, 10);
-      if (isNaN(val) || val < 1 || val > 52) {
-        alert("Masukkan jumlah minggu antara 1 hingga 52.");
-        return;
-      }
-
-      const btn = document.getElementById("btnSaveWeeks");
-      btn.disabled = true;
-      btn.textContent = "Menyimpan...";
-
-      totalWeeks = val;
-      localStorage.setItem("tangguh_v2_weeks", String(totalWeeks));
-
-      boqItems = boqItems.map(item => ({
-        ...item,
-        plans: getItemPlans(item)
-      }));
-      saveLocalAll();
-
-      if (apiUrl && apiUrl.startsWith("http")) {
-        try {
-          await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({
-              action: "updateProjectConfig",
-              totalWeeks: totalWeeks
-            })
-          });
-        } catch (e) { console.warn(e); }
-      }
-
-      btn.disabled = false;
-      btn.textContent = "Simpan Durasi & Sinkronkan";
-      renderDocControl();
-      alert(`Durasi proyek berhasil diperbarui menjadi ${totalWeeks} Minggu!`);
-    }
-
+    // ==================== MENU 2: KELOLA BOQ & DOCUMENT CONTROL ====================
     function renderDocControl() {
       const canEdit = isManagerRole();
       document.getElementById("btnAddBoqDoc").style.display = canEdit ? "inline-flex" : "none";
-      document.getElementById("activeWeeksBadge").textContent = `Durasi Aktif: ${totalWeeks} Minggu`;
-      document.getElementById("inpTotalWeeks").value = totalWeeks;
+      document.getElementById("welderSettingsCard").style.display = canEdit ? "block" : "none";
+      document.getElementById("welderName1").value = welderNames[0] || "Welder 1";
+      document.getElementById("welderName2").value = welderNames[1] || "Welder 2";
 
       const sBoq = getScopedBoq();
       let grandTotalBerat = 0;
+      sBoq.forEach(b => grandTotalBerat += (Number(b.beratSatuan) || 0) * Number(b.target || 0));
 
-      document.getElementById("boqManageTableBody").innerHTML = sBoq.length === 0
-        ? `<tr><td colspan="10" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada item material BOQ pada area ini. Klik "+ Tambah Item Material".</td></tr>`
-        : sBoq.map((b, idx) => {
+      const totalPages = Math.max(1, Math.ceil(sBoq.length / PAGE_SIZE));
+      if (docBoqPage > totalPages) docBoqPage = totalPages;
+      if (docBoqPage < 1) docBoqPage = 1;
+      const startIdx = (docBoqPage - 1) * PAGE_SIZE;
+      const pageItems = sBoq.slice(startIdx, startIdx + PAGE_SIZE);
+
+      document.getElementById("boqManageTableBody").innerHTML = pageItems.length === 0
+        ? `<tr><td colspan="8" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada item material BOQ pada area ini. Klik "+ Tambah Item Material".</td></tr>`
+        : pageItems.map((b, idx) => {
           const bSatuan = Number(b.beratSatuan) || 0;
           const totalBerat = bSatuan * Number(b.target || 0);
-          grandTotalBerat += totalBerat;
-          const plans = getItemPlans(b);
-          const planSummary = plans.map((v, i) => `W${i+1}:${v}`).join(" | ");
-
           return `
             <tr>
-              <td class="text-center">${idx + 1}</td>
+              <td class="text-center">${startIdx + idx + 1}</td>
               <td><span class="pill ${b.bangunan === 'Office' ? 'pill-blue' : 'pill-purple'}">${b.bangunan}</span></td>
               <td><strong>${b.kodeItem}</strong></td>
               <td>
                 <div style="font-weight:700; color:var(--navy);">${b.namaItem}</div>
                 <div style="font-size:0.72rem; color:var(--slate-500);">${b.section}</div>
               </td>
-              <td>${renderColorBadge(b.warna)}</td>
               <td class="text-right">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "<span style='color:#94a3b8;'>0 kg</span>"}</td>
               <td class="text-right"><strong>${b.target}</strong> ${b.satuan}</td>
               <td class="text-right">${formatWeightHtml(totalBerat, "0 kg")}</td>
-              <td style="font-size:0.72rem; color:var(--slate-600); max-width:210px;">${planSummary}</td>
               <td class="text-center">
                 <div style="display:flex; gap:5px; justify-content:center;">
                   <button type="button" class="btn btn-light btn-sm" onclick="openBoqModal('${b.idItem}')">Edit</button>
@@ -2187,10 +2334,21 @@
 
       document.getElementById("boqManageTableFoot").innerHTML = `
         <tr>
-          <td colspan="7" class="text-right">TOTAL BERAT KESELURUHAN ITEM BOQ (${activeBuilding}):</td>
+          <td colspan="6" class="text-right">TOTAL BERAT KESELURUHAN ITEM BOQ (${activeBuilding}):</td>
           <td class="text-right" style="color:var(--blue-dark);">${formatWeightHtml(grandTotalBerat, "0 kg")}</td>
-          <td colspan="2"></td>
+          <td></td>
         </tr>
+      `;
+
+      const showFrom = sBoq.length === 0 ? 0 : startIdx + 1;
+      const showTo = Math.min(sBoq.length, startIdx + PAGE_SIZE);
+      document.getElementById("boqManagePagination").innerHTML = `
+        <div>Menampilkan <strong>${showFrom}–${showTo}</strong> dari <strong>${sBoq.length}</strong> item BOQ (Maks. 10 per halaman)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn btn-light btn-sm" ${docBoqPage <= 1 ? 'disabled' : ''} onclick="changeDocBoqPage(-1)">&larr; Prev</button>
+          <span>Halaman <strong>${docBoqPage}</strong> / ${totalPages}</span>
+          <button type="button" class="btn btn-primary btn-sm" ${docBoqPage >= totalPages ? 'disabled' : ''} onclick="changeDocBoqPage(1)">Next &rarr;</button>
+        </div>
       `;
 
       document.getElementById("docControlCards").innerHTML = sBoq.map(b => {
@@ -2223,21 +2381,66 @@
       }).join("");
     }
 
-    // ==================== MENU 3: INPUT INSPEKSI & APPROVAL JAKARTA ====================
-    function populateWeekDropdown() {
-      const wSel = document.getElementById("fInspMinggu");
-      if (!wSel) return;
-      const prevVal = wSel.value;
-      let html = "";
-      for (let w = 1; w <= totalWeeks; w++) {
-        html += `<option value="W${w}">Minggu ${w} (W${w})</option>`;
-      }
-      wSel.innerHTML = html;
-      if (prevVal && Array.from(wSel.options).some(o => o.value === prevVal)) {
-        wSel.value = prevVal;
-      }
+    function changeDocBoqPage(delta) {
+      docBoqPage += delta;
+      renderDocControl();
     }
 
+    function populateWelderDropdown(selectId = "fInspWelder", selectedValue = "") {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+      const names = (welderNames || ["Welder 1", "Welder 2"]).map((v, i) => String(v || `Welder ${i + 1}`).trim());
+      const values = [...new Set(names.filter(Boolean))];
+      if (selectedValue && !values.includes(selectedValue)) values.push(selectedValue);
+      sel.innerHTML = values.map(name => `<option value="${name}">${name}</option>`).join("");
+      if (selectedValue && values.includes(selectedValue)) sel.value = selectedValue;
+    }
+
+    async function saveWelderNames() {
+      if (!isManagerRole()) return;
+      const first = document.getElementById("welderName1").value.trim();
+      const second = document.getElementById("welderName2").value.trim();
+      if (!first || !second) {
+        alert("Nama Welder 1 dan Welder 2 wajib diisi.");
+        return;
+      }
+      if (first.toLowerCase() === second.toLowerCase()) {
+        alert("Nama Welder 1 dan Welder 2 harus berbeda.");
+        return;
+      }
+      welderNames = [first, second];
+      welderNamesOverride = welderNames.slice();
+      localStorage.setItem("tangguh_v2_welder_names", JSON.stringify(welderNames));
+      localStorage.setItem("tangguh_v2_welder_names_local_override", JSON.stringify(welderNamesOverride));
+      populateWelderDropdown();
+
+      let cloudSaved = false;
+      if (apiUrl && apiUrl.startsWith("http")) {
+        try {
+          const res = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "updateWelderNames", welderNames, userName: currentUser.nama })
+          });
+          const data = await res.json();
+          cloudSaved = data.status === "success";
+        } catch (err) {
+          console.warn("Welder names local fallback:", err);
+        }
+      }
+      if (cloudSaved) {
+        welderNamesOverride = null;
+        localStorage.removeItem("tangguh_v2_welder_names_local_override");
+      }
+      document.getElementById("welderSettingsFeedback").textContent = cloudSaved
+        ? "Nama welder berhasil disimpan dan dikonfirmasi oleh Google Sheets."
+        : "Nama welder tersimpan pada browser ini. Sinkronisasi ke perangkat lain belum dikonfirmasi oleh Google Apps Script.";
+      alert(cloudSaved
+        ? "Nama pilihan welder berhasil diperbarui pada database."
+        : "Nama pilihan welder berhasil disimpan pada browser ini. Sinkronisasi database belum dikonfirmasi oleh Google Apps Script.");
+    }
+
+    // ==================== MENU 3: INPUT INSPEKSI & APPROVAL JAKARTA ====================
     function setupInspectionView() {
       const canInput = currentUser.bisaInput === true;
       const isTech = isTechnicianRole();
@@ -2249,7 +2452,6 @@
       document.getElementById("managerInspectionTablesWrap").style.display = isTech ? "none" : "block";
 
       if (canInput) {
-        populateWeekDropdown();
         populateBuildingSelect("fInspBangunan", activeBuilding !== "Gabungan" ? activeBuilding : buildingList[0].name);
         const bSel = document.getElementById("fInspBangunan");
         if (activeBuilding !== "Gabungan") {
@@ -2267,6 +2469,12 @@
 
     function onInspBuildingChange() {
       const bldg = document.getElementById("fInspBangunan").value;
+      const welderWrap = document.getElementById("welderSelectWrap");
+      if (welderWrap) {
+        const showWelder = isWelderBuilding(bldg);
+        welderWrap.style.display = showWelder ? "block" : "none";
+        if (showWelder) populateWelderDropdown();
+      }
       const items = boqItems.filter(b => b.bangunan === bldg);
       const kSel = document.getElementById("fInspKode");
       kSel.innerHTML = items.length === 0
@@ -2300,6 +2508,7 @@
       selectedUnits.clear();
       document.getElementById("unitSearchInp").value = "";
       document.getElementById("unitStatusFilter").value = "ALL";
+      document.getElementById("unitRangeInp").value = "";
       renderUnitDropdownList();
     }
 
@@ -2316,9 +2525,21 @@
       }
     }
 
+    function getInspectionLogTimestamp(log) {
+      const idNumber = Number(String(log.idLog || "").replace(/^LOG-/, ""));
+      if (Number.isFinite(idNumber) && idNumber > 1000000000000) return idNumber;
+      const match = String(log.diinputOleh || "").match(/\((\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\)/);
+      if (match) {
+        const parsed = new Date(`${match[1]}T${match[2]}:00`).getTime();
+        if (Number.isFinite(parsed)) return parsed;
+      }
+      return Number.isFinite(idNumber) ? idNumber : 0;
+    }
+
     function getUnitStatusMap(bldg, kode) {
       const map = {};
-      logs.filter(l => l.bangunan === bldg && l.kodeItem === kode).forEach(l => {
+      logs.filter(l => l.bangunan === bldg && l.kodeItem === kode)
+        .slice().sort((a, b) => getInspectionLogTimestamp(a) - getInspectionLogTimestamp(b)).forEach(l => {
         const units = String(l.unitList || "").split(",").map(s => s.trim()).filter(Boolean);
         units.forEach(u => {
           if (l.statusApproval === "Rework" || l.statusQc === "Rework") {
@@ -2427,15 +2648,77 @@
       if (!item) return;
       const total = Number(item.target) || 0;
       const statusMap = getUnitStatusMap(bldg, kode);
-
-      let added = 0;
-      for (let i = 1; i <= total && added < count; i++) {
+      const desiredCount = Math.max(0, Math.min(total, Number(count) || 0));
+      if (selectedUnits.size > desiredCount) {
+        alert(`Jumlah unit yang sudah dipilih (${selectedUnits.size}) melebihi Isi per Bundle (${desiredCount}). Kurangi pilihan manual terlebih dahulu.`);
+        return;
+      }
+      for (let i = 1; i <= total && selectedUnits.size < desiredCount; i++) {
         const numStr = String(i).padStart(3, "0");
-        if (!statusMap[numStr] && !selectedUnits.has(numStr)) {
-          selectedUnits.add(numStr);
-          added++;
+        if (!statusMap[numStr] && !selectedUnits.has(numStr)) selectedUnits.add(numStr);
+      }
+      if (selectedUnits.size < desiredCount) {
+        alert(`Hanya tersedia ${selectedUnits.size} unit Belum QC untuk bundle ini.`);
+      }
+      renderUnitDropdownList();
+    }
+
+    function selectBundleBySize() {
+      const count = parseInt(document.getElementById("fBundleSize").value, 10);
+      if (!Number.isInteger(count) || count < 1) {
+        alert("Isi per Bundle harus berupa angka minimal 1.");
+        return;
+      }
+      selectNextAvailableUnits(count);
+    }
+
+    function parseUnitSelectionInput(value, target) {
+      const raw = String(value || "").trim();
+      if (!raw) return [];
+      const output = new Set();
+      const parts = raw.split(/[;,]/).map(v => v.trim()).filter(Boolean);
+      for (const part of parts) {
+        const range = part.match(/^(\d+)\s*-\s*(\d+)$/);
+        if (range) {
+          const start = parseInt(range[1], 10);
+          const end = parseInt(range[2], 10);
+          if (start < 1 || end < start || end > target) throw new Error(`Rentang "${part}" di luar nomor unit 001-${String(target).padStart(3, "0")} atau tidak valid.`);
+          for (let n = start; n <= end; n++) output.add(String(n).padStart(3, "0"));
+        } else if (/^\d+$/.test(part)) {
+          const n = parseInt(part, 10);
+          if (n < 1 || n > target) throw new Error(`Nomor unit "${part}" di luar target BOQ.`);
+          output.add(String(n).padStart(3, "0"));
+        } else {
+          throw new Error(`Format nomor unit "${part}" tidak valid. Gunakan 001-005,008.`);
         }
       }
+      return Array.from(output).sort();
+    }
+
+    function selectUnitsByRange() {
+      const bldg = document.getElementById("fInspBangunan").value;
+      const kode = document.getElementById("fInspKode").value;
+      const item = boqItems.find(b => b.bangunan === bldg && b.kodeItem === kode);
+      if (!item) return;
+      let units;
+      try {
+        units = parseUnitSelectionInput(document.getElementById("unitRangeInp").value, Number(item.target) || 0);
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+      if (!units.length) {
+        alert("Masukkan nomor unit atau rentang terlebih dahulu.");
+        return;
+      }
+      const statusMap = getUnitStatusMap(bldg, kode);
+      const unavailable = units.filter(unit => statusMap[unit]);
+      if (unavailable.length) {
+        alert(`Unit berikut sudah memiliki status QC / Rework sehingga tidak dapat dipilih: ${unavailable.join(", ")}`);
+        return;
+      }
+      units.forEach(unit => selectedUnits.add(unit));
+      document.getElementById("unitRangeInp").value = "";
       renderUnitDropdownList();
     }
 
@@ -2658,8 +2941,9 @@
       const item = boqItems.find(b => b.bangunan === bldg && b.kodeItem === kode);
       const tagBundel = document.getElementById("nextBundleBadge").dataset.tag;
       const statusQc = document.getElementById("fInspStatusQc").value;
-      const minggu = document.getElementById("fInspMinggu").value;
+      const minggu = "-";
       const catatan = document.getElementById("fInspCatatan").value.trim();
+      const welder = (bldg === "Office" || bldg === "Workshop") ? document.getElementById("fInspWelder").value : "";
 
       const now = new Date();
       const pad = n => String(n).padStart(2, "0");
@@ -2676,6 +2960,7 @@
         minggu,
         statusQc,
         catatanInspeksi: catatan,
+        welder,
         fotoQcOk: statusQc === "OK" ? capturedPhotos.insp : "",
         fotoTemuanNg: statusQc === "Rework" ? capturedPhotos.insp : "",
         fotoAfterRepair: "",
@@ -2704,6 +2989,7 @@
               minggu,
               statusQc,
               catatanInspeksi: catatan,
+              welder,
               fotoBase64: capturedPhotos.insp,
               userName: currentUser.nama
             })
@@ -2720,6 +3006,10 @@
       }
 
       logs.unshift(newLog);
+      if (welder) {
+        inspectionOverrides[newLog.idLog] = {...(inspectionOverrides[newLog.idLog] || {}), welder};
+        localStorage.setItem("tangguh_v2_inspection_overrides", JSON.stringify(inspectionOverrides));
+      }
       saveLocalAll();
 
       document.getElementById("fInspCatatan").value = "";
@@ -2727,11 +3017,9 @@
       const prev = document.getElementById("inspPhotoPreview");
       prev.src = ""; prev.style.display = "none";
 
-      alert(`Tersimpan! Tag Bundel fisik: ${tagBundel}`);
+      alert(`Tersimpan! Tag Bundel fisik: ${tagBundel} (${unitsArr.length} unit)`);
       onInspItemChange();
-      if (!isTechnicianRole()) {
-        renderInspectionTables();
-      }
+      if (!isTechnicianRole()) renderInspectionTables();
       renderSidebarNav();
 
       btn.disabled = false;
@@ -2769,10 +3057,10 @@
           <th>Tag Bundel &amp; Minggu</th>
           <th>Bangunan &amp; Kode Item</th>
           <th>Unit &amp; Qty</th>
-          <th>Catatan &amp; Petugas</th>
+          <th>Catatan, Welder &amp; Petugas</th>
           <th class="text-center">Dokumentasi Foto</th>
           <th>Status</th>
-          ${isMgr ? `<th class="text-center">Aksi Atasan</th>` : ""}
+          ${isMgr ? `<th class="text-center">Aksi</th>` : ""}
         </tr>
       `;
 
@@ -2803,6 +3091,7 @@
               </td>
               <td style="max-width:210px; font-size:0.77rem;">
                 <div>${l.catatanInspeksi || "-"}</div>
+                ${l.welder ? `<div style="color:var(--blue-dark); margin-top:2px;"><strong>Welder:</strong> ${l.welder}</div>` : ""}
                 ${l.catatanRepair ? `<div style="color:var(--green-dark); margin-top:2px;"><strong>Perbaikan:</strong> ${l.catatanRepair}</div>` : ""}
                 <div style="color:var(--slate-500); font-size:0.7rem; margin-top:3px;">Input: ${l.diinputOleh}</div>
               </td>
@@ -2817,12 +3106,146 @@
               </td>
               ${isMgr ? `
                 <td class="text-center">
-                  <button class="btn ${l.statusApproval === 'Approved' ? 'btn-light' : 'btn-success'} btn-sm" onclick="openApproveModal('${l.idLog}')">${l.statusApproval === 'Approved' ? 'Ubah' : 'Approve'}</button>
+                  <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+                    <button class="btn btn-light btn-sm" onclick="openInspectionEditModal('${l.idLog}')">Edit Input</button>
+                    <button class="btn ${l.statusApproval === 'Approved' ? 'btn-light' : 'btn-success'} btn-sm" onclick="openApproveModal('${l.idLog}')">${l.statusApproval === 'Approved' ? 'Ubah Approval' : 'Approve'}</button>
+                  </div>
                 </td>
               ` : ""}
             </tr>
           `;
         }).join("");
+    }
+
+    // Edit Input Inspeksi / Tag Bundle
+    function openInspectionEditModal(idLog) {
+      if (!isManagerRole()) return;
+      const log = logs.find(l => l.idLog === idLog);
+      if (!log) return;
+      document.getElementById("editInspectionLogId").value = idLog;
+      document.getElementById("editInspectionModalDesc").textContent = `${log.tagBundel} • ${log.bangunan} — ${log.kodeItem} (${log.qty} unit)`;
+      document.getElementById("editInspectionUnitList").value = log.unitList || "";
+      document.getElementById("editInspectionStatus").value = log.statusQc || "OK";
+      document.getElementById("editInspectionNote").value = log.catatanInspeksi || "";
+      populateWelderDropdown("editInspectionWelder", log.welder || "");
+      document.getElementById("editInspectionWelderWrap").style.display = isWelderBuilding(log.bangunan) ? "block" : "none";
+      const trackingAdvanced = ["Dalam Pengiriman", "QC Incoming Papua"].includes(log.statusTracking);
+      document.getElementById("editInspectionUnitHint").textContent = trackingAdvanced
+        ? "Bundle sudah masuk tahap pengiriman / penerimaan. Nomor unit tidak dapat diubah; koreksi catatan dan welder masih dapat dilakukan."
+        : "Gunakan daftar nomor dipisahkan koma atau rentang, misalnya 001-005,008.";
+      document.getElementById("editInspectionUnitList").disabled = !!trackingAdvanced;
+      document.getElementById("editInspectionStatus").disabled = !!trackingAdvanced;
+      document.getElementById("editInspectionCloudNote").textContent = "Perubahan akan disimpan pada browser ini. Dukungan simpan ke Google Sheets bergantung pada action updateInspection di Apps Script yang terpasang.";
+      document.getElementById("inspectionEditModal").classList.add("show");
+    }
+
+    async function saveInspectionEdit() {
+      if (!isManagerRole()) return;
+      const idLog = document.getElementById("editInspectionLogId").value;
+      const index = logs.findIndex(l => l.idLog === idLog);
+      if (index < 0) return;
+      const oldLog = logs[index];
+      const item = boqItems.find(b => b.bangunan === oldLog.bangunan && b.kodeItem === oldLog.kodeItem);
+      if (!item) {
+        alert("Item BOQ untuk log ini tidak ditemukan. Data tidak diubah.");
+        return;
+      }
+
+      let units;
+      try {
+        units = parseUnitSelectionInput(document.getElementById("editInspectionUnitList").value, Number(item.target) || 0);
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+      if (!units.length) {
+        alert("Minimal satu nomor unit harus dipilih.");
+        return;
+      }
+      const trackingAdvanced = ["Dalam Pengiriman", "QC Incoming Papua"].includes(oldLog.statusTracking);
+      const nextStatus = document.getElementById("editInspectionStatus").value;
+      const nextUnitList = units.join(",");
+      if (trackingAdvanced && (nextUnitList !== String(oldLog.unitList || "") || nextStatus !== oldLog.statusQc)) {
+        alert("Nomor unit dan status QC tidak dapat diubah setelah bundle masuk tahap pengiriman atau QC Incoming Papua.");
+        return;
+      }
+
+      if (!trackingAdvanced) {
+        const alreadyUsed = new Set();
+        logs.filter(l => l.idLog !== idLog && l.bangunan === oldLog.bangunan && l.kodeItem === oldLog.kodeItem)
+          .forEach(l => String(l.unitList || "").split(",").map(v => v.trim()).filter(Boolean).forEach(v => alreadyUsed.add(v)));
+        const conflicts = units.filter(unit => alreadyUsed.has(unit));
+        if (conflicts.length) {
+          alert(`Nomor unit berikut sudah tercatat pada tag bundle lain: ${conflicts.join(", ")}.`);
+          return;
+        }
+      }
+
+      const updatedLog = {
+        ...oldLog,
+        unitList: nextUnitList,
+        qty: units.length,
+        statusQc: nextStatus,
+        catatanInspeksi: document.getElementById("editInspectionNote").value.trim(),
+        welder: isWelderBuilding(oldLog.bangunan) ? document.getElementById("editInspectionWelder").value : (oldLog.welder || "")
+      };
+      if (!trackingAdvanced && (nextStatus !== oldLog.statusQc || nextUnitList !== String(oldLog.unitList || ""))) {
+        updatedLog.statusApproval = nextStatus === "Rework" ? "Rework" : "Menunggu Approval";
+        updatedLog.approvedBy = "-";
+        updatedLog.statusTracking = "Belum Siap";
+      }
+
+      const btn = document.getElementById("btnSaveInspectionEdit");
+      btn.disabled = true;
+      btn.textContent = "Menyimpan...";
+      logs[index] = updatedLog;
+      saveLocalAll();
+
+      let cloudSaved = false;
+      if (apiUrl && apiUrl.startsWith("http")) {
+        try {
+          const res = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              action: "updateInspection",
+              idLog,
+              tagBundel: updatedLog.tagBundel,
+              bangunan: updatedLog.bangunan,
+              kodeItem: updatedLog.kodeItem,
+              unitList: updatedLog.unitList,
+              qty: updatedLog.qty,
+              statusQc: updatedLog.statusQc,
+              statusApproval: updatedLog.statusApproval,
+              catatanInspeksi: updatedLog.catatanInspeksi,
+              welder: updatedLog.welder,
+              userName: currentUser.nama
+            })
+          });
+          const data = await res.json();
+          cloudSaved = data.status === "success";
+        } catch (err) {
+          console.warn("Update inspection fallback to local storage:", err);
+        }
+      }
+
+      if (!cloudSaved) {
+        inspectionOverrides[idLog] = updatedLog;
+        localStorage.setItem("tangguh_v2_inspection_overrides", JSON.stringify(inspectionOverrides));
+      } else {
+        delete inspectionOverrides[idLog];
+        localStorage.setItem("tangguh_v2_inspection_overrides", JSON.stringify(inspectionOverrides));
+      }
+
+      btn.disabled = false;
+      btn.textContent = "Simpan Perubahan";
+      closeModal("inspectionEditModal");
+      renderInspectionTables();
+      renderDashboard();
+      renderSidebarNav();
+      alert(cloudSaved
+        ? "Koreksi inspeksi berhasil diperbarui pada Google Sheets."
+        : "Koreksi inspeksi tersimpan pada browser ini. Google Apps Script belum mengonfirmasi dukungan action updateInspection, sehingga perubahan belum dapat dipastikan tersimpan ke Google Sheets atau perangkat lain.");
     }
 
     // Rework Resolution Modal
@@ -3373,30 +3796,6 @@
     function refreshLiveWatermarkPreview() {}
 
     // ==================== BOQ & DOCUMENT CONTROL MODAL ====================
-    function renderModalWeekInputs(plansArr) {
-      document.getElementById("bPlanLabel").textContent = `Rencana Kumulatif per Minggu (W1 s/d W${totalWeeks})`;
-      let html = "";
-      for (let i = 0; i < totalWeeks; i++) {
-        const val = (plansArr && plansArr[i] !== undefined) ? plansArr[i] : 0;
-        html += `
-          <div class="week-plan-cell">
-            <label>W${i + 1}</label>
-            <input type="number" id="bPlanW_${i}" class="form-control" min="0" value="${val}" />
-          </div>
-        `;
-      }
-      document.getElementById("bWeekPlanInputs").innerHTML = html;
-    }
-
-    function autoDistributePlan() {
-      const target = Math.max(0, Number(document.getElementById("bTarget").value) || 0);
-      for (let i = 0; i < totalWeeks; i++) {
-        const cum = Math.round(((i + 1) / totalWeeks) * target);
-        const inp = document.getElementById(`bPlanW_${i}`);
-        if (inp) inp.value = cum;
-      }
-    }
-
     function updateModalWeightPreview() {
       const target = Number(document.getElementById("bTarget").value) || 0;
       const berat = Number(document.getElementById("bBerat").value) || 0;
@@ -3419,13 +3818,13 @@
         document.getElementById("bIdItem").value = b.idItem;
         document.getElementById("bBangunan").value = b.bangunan;
         document.getElementById("bKode").value = b.kodeItem;
-        document.getElementById("bWarna").value = COLOR_MAP[b.warna] ? b.warna : "Belum Ditentukan / Tanpa Warna";
+        // Kode warna dipertahankan dari data existing, tetapi tidak lagi diedit melalui form.
         document.getElementById("bNama").value = b.namaItem;
         document.getElementById("bSection").value = b.section;
         document.getElementById("bSatuan").value = b.satuan;
         document.getElementById("bTarget").value = b.target;
         document.getElementById("bBerat").value = Number(b.beratSatuan) || 0;
-        renderModalWeekInputs(getItemPlans(b));
+        // Rencana mingguan lama tetap dipertahankan tanpa field input pada form.
         document.getElementById("bCatatan").value = b.catatanStandar || "";
         if (b.gambarUrl) {
           imgPrev.src = b.gambarUrl;
@@ -3438,17 +3837,12 @@
           document.getElementById("bBangunan").value = activeBuilding;
         }
         document.getElementById("bKode").value = "";
-        document.getElementById("bWarna").value = "Belum Ditentukan / Tanpa Warna";
+
         document.getElementById("bNama").value = "";
         document.getElementById("bSection").value = "Struktur Utama";
         document.getElementById("bSatuan").value = "Batang";
         document.getElementById("bTarget").value = 20;
         document.getElementById("bBerat").value = 0;
-        const defaultPlans = [];
-        for (let i = 0; i < totalWeeks; i++) {
-          defaultPlans.push(Math.round(((i + 1) / totalWeeks) * 20));
-        }
-        renderModalWeekInputs(defaultPlans);
         document.getElementById("bCatatan").value = "";
       }
       updateModalWeightPreview();
@@ -3485,12 +3879,6 @@
       const namaItem = document.getElementById("bNama").value.trim();
       if (!kodeItem || !namaItem) { alert("Kode Item dan Nama Item wajib diisi."); return; }
 
-      const plansArr = [];
-      for (let i = 0; i < totalWeeks; i++) {
-        const inp = document.getElementById(`bPlanW_${i}`);
-        plansArr.push(inp ? (Number(inp.value) || 0) : 0);
-      }
-
       const btn = document.getElementById("btnSaveBoqDoc");
       btn.disabled = true; btn.textContent = "Menyimpan...";
 
@@ -3501,15 +3889,15 @@
         kodeItem,
         namaItem,
         section: document.getElementById("bSection").value.trim(),
-        warna: document.getElementById("bWarna").value,
+        warna: existing ? (existing.warna || "Belum Ditentukan / Tanpa Warna") : "Belum Ditentukan / Tanpa Warna",
         satuan: document.getElementById("bSatuan").value.trim(),
         target: Number(document.getElementById("bTarget").value) || 0,
         beratSatuan: Number(document.getElementById("bBerat").value) || 0,
-        plans: plansArr,
-        planW1: plansArr[0] || 0,
-        planW2: plansArr[1] || 0,
-        planW3: plansArr[2] || 0,
-        planW4: plansArr[3] || 0,
+        plans: existing && Array.isArray(existing.plans) ? existing.plans : [],
+        planW1: existing ? (existing.planW1 || 0) : 0,
+        planW2: existing ? (existing.planW2 || 0) : 0,
+        planW3: existing ? (existing.planW3 || 0) : 0,
+        planW4: existing ? (existing.planW4 || 0) : 0,
         gambarUrl: capturedPhotos.boqDoc || (existing ? existing.gambarUrl : ""),
         catatanStandar: document.getElementById("bCatatan").value.trim()
       };
@@ -3527,9 +3915,7 @@
             })
           });
           const data = await res.json();
-          if (data.status === "success" && data.gambarUrl) {
-            updatedObj.gambarUrl = data.gambarUrl;
-          }
+          if (data.status === "success" && data.gambarUrl) updatedObj.gambarUrl = data.gambarUrl;
         } catch (e) { console.warn(e); }
       }
 
@@ -3540,6 +3926,7 @@
       saveLocalAll();
       btn.disabled = false; btn.textContent = "Simpan Item BOQ & Dokumen";
       closeModal("boqModal");
+      docBoqPage = 1;
       renderDocControl();
     }
 
@@ -3653,7 +4040,7 @@
       return `
         <div class="p-head">
           <h2>BERITA ACARA PROGRES QA/QC FABRIKASI &amp; TRACKING MATERIAL (BERBASIS BOQ)</h2>
-          <p><strong>Proyek:</strong> Temporary Utility — LNG Tangguh &nbsp;|&nbsp; <strong>Area:</strong> ${areaTitle} &nbsp;|&nbsp; <strong>Durasi:</strong> ${totalWeeks} Minggu &nbsp;|&nbsp; <strong>Tanggal Cetak:</strong> ${today}</p>
+          <p><strong>Proyek:</strong> Temporary Utility — LNG Tangguh &nbsp;|&nbsp; <strong>Area:</strong> ${areaTitle} &nbsp;|&nbsp; <strong>Tanggal Cetak:</strong> ${today}</p>
         </div>
 
         <div class="p-sec-title">1. Rekapitulasi Capaian Berdasarkan Daftar Item BOQ</div>
@@ -3731,8 +4118,9 @@
     function saveLocalAll() {
       localStorage.setItem("tangguh_v2_boq", JSON.stringify(boqItems));
       localStorage.setItem("tangguh_v2_logs", JSON.stringify(logs));
-      localStorage.setItem("tangguh_v2_weeks", String(totalWeeks));
       localStorage.setItem("tangguh_v2_buildings", JSON.stringify(buildingList));
+      localStorage.setItem("tangguh_v2_welder_names", JSON.stringify(welderNames));
+      localStorage.setItem("tangguh_v2_building_rename_map", JSON.stringify(buildingRenameMap));
     }
 
     function openDbModal() {
@@ -3758,8 +4146,8 @@
         const res = await fetch(apiUrl + "?t=" + Date.now());
         const data = await res.json();
         if (data.status === "success") {
-          if (data.totalWeeks) totalWeeks = parseInt(data.totalWeeks, 10) || 4;
           if (data.buildings && data.buildings.length > 0) buildingList = data.buildings;
+          if (Array.isArray(buildingListOverride)) buildingList = buildingListOverride.map(b => ({...b}));
           if (data.users && data.users.length > 0) {
             masterUsers = data.users;
             if (!masterUsers.some(u => u.role === "Guest")) {
@@ -3768,6 +4156,24 @@
           }
           if (data.boqItems && data.boqItems.length > 0) boqItems = data.boqItems;
           if (data.logs) logs = data.logs.slice().reverse();
+          buildingRenameMap = JSON.parse(localStorage.getItem("tangguh_v2_building_rename_map")) || {};
+          const resolveBuildingName = originalName => {
+            let resolved = originalName;
+            const visited = new Set();
+            while (buildingRenameMap[resolved] && !visited.has(resolved)) {
+              visited.add(resolved);
+              resolved = buildingRenameMap[resolved];
+            }
+            return resolved;
+          };
+          boqItems = boqItems.map(item => ({...item, bangunan: resolveBuildingName(item.bangunan)}));
+          logs = logs.map(log => ({...log, bangunan: resolveBuildingName(log.bangunan)}));
+          inspectionOverrides = JSON.parse(localStorage.getItem("tangguh_v2_inspection_overrides")) || {};
+          logs = logs.map(log => inspectionOverrides[log.idLog] ? {...log, ...inspectionOverrides[log.idLog]} : log);
+          if (Array.isArray(data.welderNames) && data.welderNames.length >= 2) welderNames = data.welderNames.slice(0, 2);
+          welderNamesOverride = JSON.parse(localStorage.getItem("tangguh_v2_welder_names_local_override")) || null;
+          if (Array.isArray(welderNamesOverride)) welderNames = welderNamesOverride.slice();
+          else if (!Array.isArray(data.welderNames)) welderNames = JSON.parse(localStorage.getItem("tangguh_v2_welder_names")) || welderNames || ["Welder 1", "Welder 2"];
           saveLocalAll();
           updateConnIndicators();
           if (currentUser) {
