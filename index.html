@@ -547,6 +547,12 @@
       border: 1px solid var(--border); display: none; margin: 8px auto;
     }
 
+    .welder-names-editor { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+    .welder-name-row { display:flex; align-items:flex-end; gap:6px; min-width:0; }
+    .welder-name-row .form-group { flex:1; min-width:0; margin-bottom:0; }
+    .welder-name-row .btn { flex:0 0 auto; }
+    @media (max-width:720px) { .welder-names-editor { grid-template-columns:1fr; } }
+
     /* ================= MODALS ================= */
     .modal-backdrop {
       position: fixed; inset: 0; background: rgba(15,23,42,0.6);
@@ -864,17 +870,11 @@
                   <div class="card-sub">Nama pilihan welder pada form inspeksi Office dan Workshop</div>
                 </div>
               </div>
-              <div class="grid-2">
-                <div class="form-group">
-                  <label class="form-label" for="welderName1">Nama Welder 1</label>
-                  <input type="text" id="welderName1" class="form-control" value="Welder 1" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="welderName2">Nama Welder 2</label>
-                  <input type="text" id="welderName2" class="form-control" value="Welder 2" />
-                </div>
+              <div id="welderNamesEditor" class="welder-names-editor"></div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                <button type="button" class="btn btn-light btn-sm" onclick="addWelderNameField()">+ Tambah Welder</button>
+                <button type="button" class="btn btn-primary" onclick="saveWelderNames()">Simpan Nama Welder</button>
               </div>
-              <button type="button" class="btn btn-primary" onclick="saveWelderNames()">Simpan Nama Welder</button>
               <div id="welderSettingsFeedback" style="font-size:0.73rem; color:var(--slate-500); margin-top:7px;"></div>
             </div>
 
@@ -1579,6 +1579,14 @@
 
     let apiUrl = localStorage.getItem("tangguh_v2_api_url") || DEFAULT_API_URL;
     let currentUser = null;
+    let currentSessionToken = "";
+    const SESSION_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+    let lastUserActivityAt = Date.now();
+    let sessionIdleTimer = null;
+    let sessionHeartbeatTimer = null;
+    let sessionActivityHandler = null;
+    let sessionVisibilityHandler = null;
+    let sessionExpiryInProgress = false;
     let activeBuilding = "Office";
     let activeMenu = "dashboard";
 
@@ -1771,15 +1779,113 @@
 
     // ==================== INIT & AUTH ====================
     window.addEventListener("DOMContentLoaded", async () => {
-      // Keamanan sesi: hapus sesi lama yang pernah disimpan di browser.
-      // Pengguna wajib memasukkan username dan password setiap kali membuka ulang aplikasi.
       localStorage.removeItem("tangguh_v2_user");
       currentUser = null;
+      currentSessionToken = "";
       document.getElementById("appShell").style.display = "none";
       document.getElementById("loginScreen").style.display = "flex";
       updateConnIndicators();
-      // Sinkronisasi data baru dijalankan setelah autentikasi server berhasil.
+      await restoreExistingTabSession();
     });
+
+    async function restoreExistingTabSession() {
+      const token = sessionStorage.getItem("tangguh_v2_session_token") || "";
+      const userJson = sessionStorage.getItem("tangguh_v2_session_user") || "";
+      if (!token || !userJson || !apiUrl || !apiUrl.startsWith("http")) return;
+      try {
+        const user = JSON.parse(userJson);
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "sessionHeartbeat", sessionToken: token })
+        });
+        const data = await res.json();
+        if (!res.ok || data.status !== "success") throw new Error(data.message || "Sesi sudah berakhir.");
+        currentSessionToken = token;
+        currentUser = user;
+        if (!(await syncFromCloud(true))) throw new Error("Data proyek tidak dapat dimuat.");
+        enterApp();
+        startSessionMonitor();
+      } catch (err) {
+        clearBrowserSession_();
+        currentUser = null;
+        currentSessionToken = "";
+        document.getElementById("loginScreen").style.display = "flex";
+        document.getElementById("appShell").style.display = "none";
+      }
+    }
+
+    function clearBrowserSession_() {
+      sessionStorage.removeItem("tangguh_v2_session_token");
+      sessionStorage.removeItem("tangguh_v2_session_user");
+    }
+
+    function stopSessionMonitor() {
+      if (sessionIdleTimer) clearInterval(sessionIdleTimer);
+      if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
+      sessionIdleTimer = null;
+      sessionHeartbeatTimer = null;
+      if (sessionActivityHandler) {
+        ["click", "keydown", "mousemove", "pointerdown", "touchstart", "scroll"].forEach(evt => {
+          window.removeEventListener(evt, sessionActivityHandler, { passive: true });
+        });
+        sessionActivityHandler = null;
+      }
+      if (sessionVisibilityHandler) {
+        document.removeEventListener("visibilitychange", sessionVisibilityHandler);
+        sessionVisibilityHandler = null;
+      }
+    }
+
+    function startSessionMonitor() {
+      stopSessionMonitor();
+      lastUserActivityAt = Date.now();
+      sessionExpiryInProgress = false;
+      sessionActivityHandler = () => {
+        if (Date.now() - lastUserActivityAt >= SESSION_IDLE_TIMEOUT_MS) {
+          expireSessionForInactivity();
+          return;
+        }
+        lastUserActivityAt = Date.now();
+      };
+      ["click", "keydown", "mousemove", "pointerdown", "touchstart", "scroll"].forEach(evt => {
+        window.addEventListener(evt, sessionActivityHandler, { passive: true });
+      });
+      sessionVisibilityHandler = () => {
+        if (!document.hidden && currentUser && Date.now() - lastUserActivityAt >= SESSION_IDLE_TIMEOUT_MS) {
+          expireSessionForInactivity();
+        }
+      };
+      document.addEventListener("visibilitychange", sessionVisibilityHandler);
+      sessionIdleTimer = setInterval(() => {
+        if (currentUser && Date.now() - lastUserActivityAt >= SESSION_IDLE_TIMEOUT_MS) {
+          expireSessionForInactivity();
+        }
+      }, 5000);
+      sessionHeartbeatTimer = setInterval(async () => {
+        if (!currentUser || !currentSessionToken) return;
+        if (Date.now() - lastUserActivityAt >= SESSION_IDLE_TIMEOUT_MS) return;
+        try {
+          const res = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "sessionHeartbeat", sessionToken: currentSessionToken })
+          });
+          const data = await res.json();
+          if (!res.ok || data.status !== "success") await expireSessionForInactivity();
+        } catch (err) {
+          console.warn("Heartbeat sesi gagal:", err);
+        }
+      }, 30000);
+    }
+
+    async function expireSessionForInactivity() {
+      if (!currentUser || sessionExpiryInProgress) return;
+      sessionExpiryInProgress = true;
+      await handleLogout(true);
+      alert("Sesi otomatis berakhir karena tidak ada aktivitas selama 5 menit. Silakan login kembali.");
+      sessionExpiryInProgress = false;
+    }
 
     // Tutup dropdown unit saat klik di luar
     document.addEventListener("click", (e) => {
@@ -1808,51 +1914,71 @@
         errBox.style.display = "block";
         return;
       }
-
-      // Autentikasi wajib dilakukan oleh Google Apps Script terhadap master Users.
-      // Tidak ada fallback akun/password bawaan di browser.
       if (!apiUrl || !apiUrl.startsWith("http")) {
         errBox.textContent = "Database Google Apps Script belum terhubung. Login lokal dinonaktifkan demi keamanan.";
         errBox.style.display = "block";
         return;
       }
-      if (apiUrl && apiUrl.startsWith("http")) {
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Memverifikasi..."; }
-        try {
-          const res = await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "login", username: u, password: p })
-          });
-          const data = await res.json();
-          if (!res.ok || data.status !== "success" || !data.user) {
-            errBox.textContent = data.message || "Username atau sandi salah, atau akun tidak aktif.";
-            errBox.style.display = "block";
-            return;
-          }
 
-          currentUser = data.user;
-          await syncFromCloud(true);
-          enterApp();
-          return;
-        } catch (err) {
-          console.error("Login cloud gagal:", err);
-          errBox.textContent = "Tidak dapat memverifikasi login ke Google Sheets. Periksa URL Web App dan deployment Code.gs terbaru.";
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Memverifikasi..."; }
+      try {
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "login", username: u, password: p })
+        });
+        const data = await res.json();
+        if (!res.ok || data.status !== "success" || !data.user || !data.sessionToken) {
+          errBox.textContent = data.message || "Username atau sandi salah, atau akun tidak aktif.";
           errBox.style.display = "block";
           return;
-        } finally {
-          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Masuk ke Sistem"; }
         }
-      }
 
+        currentUser = data.user;
+        currentSessionToken = data.sessionToken;
+        sessionStorage.setItem("tangguh_v2_session_token", currentSessionToken);
+        sessionStorage.setItem("tangguh_v2_session_user", JSON.stringify(currentUser));
+        if (!(await syncFromCloud(true))) {
+          await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "logout", sessionToken: currentSessionToken })
+          }).catch(() => {});
+          clearBrowserSession_();
+          currentUser = null;
+          currentSessionToken = "";
+          throw new Error("Login berhasil, tetapi data proyek gagal dimuat. Silakan coba lagi.");
+        }
+        enterApp();
+        startSessionMonitor();
+      } catch (err) {
+        console.error("Login cloud gagal:", err);
+        errBox.textContent = err.message || "Tidak dapat memverifikasi login ke Google Sheets.";
+        errBox.style.display = "block";
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Masuk ke Sistem"; }
+      }
     }
 
-    function handleLogout() {
+    async function handleLogout(silent = false) {
+      const token = currentSessionToken;
+      stopSessionMonitor();
+      if (token && apiUrl && apiUrl.startsWith("http")) {
+        try {
+          await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "logout", sessionToken: token })
+          });
+        } catch (err) { console.warn("Logout server tidak terkonfirmasi:", err); }
+      }
       currentUser = null;
-      localStorage.removeItem("tangguh_v2_user");
+      currentSessionToken = "";
+      clearBrowserSession_();
       document.getElementById("appShell").style.display = "none";
       document.getElementById("loginScreen").style.display = "flex";
       document.getElementById("loginPass").value = "";
+      if (!silent) document.getElementById("loginErr").style.display = "none";
     }
 
     function enterApp() {
@@ -1969,7 +2095,8 @@
         const res = await fetch(apiUrl, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action, ...payload })
+          body: JSON.stringify({
+              sessionToken: currentSessionToken, action, ...payload })
         });
         const data = await res.json();
         return data.status === "success";
@@ -2040,7 +2167,7 @@
           await fetch(apiUrl, {
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "addBuilding", name, code })
+            body: JSON.stringify({ sessionToken: currentSessionToken, action: "addBuilding", name, code })
           });
         } catch (err) { console.warn(err); }
       }
@@ -2539,8 +2666,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const canEdit = isManagerRole();
       document.getElementById("btnAddBoqDoc").style.display = canEdit ? "inline-flex" : "none";
       document.getElementById("welderSettingsCard").style.display = canEdit ? "block" : "none";
-      document.getElementById("welderName1").value = welderNames[0] || "Welder 1";
-      document.getElementById("welderName2").value = welderNames[1] || "Welder 2";
+      renderWelderSettings();
 
       const sBoq = getScopedBoq();
       let grandTotalBerat = 0;
@@ -2640,58 +2766,94 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       renderDocControl();
     }
 
+    function escapeHtmlText(value) {
+      return String(value == null ? "" : value).replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[ch]));
+    }
+
+    function renderWelderSettings() {
+      const editor = document.getElementById("welderNamesEditor");
+      if (!editor) return;
+      if (!Array.isArray(welderNames) || welderNames.length < 2) welderNames = ["Welder 1", "Welder 2"];
+      editor.innerHTML = welderNames.map((name, index) => `
+        <div class="welder-name-row">
+          <div class="form-group">
+            <label class="form-label" for="welderName_${index}">Nama Welder ${index + 1}</label>
+            <input type="text" id="welderName_${index}" class="form-control welder-name-input" data-index="${index}" value="${escapeHtmlText(name)}" placeholder="Masukkan nama welder ${index + 1}" />
+          </div>
+          <button type="button" class="btn btn-danger btn-sm" title="Hapus welder" onclick="removeWelderNameField(${index})" ${welderNames.length <= 2 ? "disabled" : ""}>Hapus</button>
+        </div>
+      `).join("");
+    }
+
+    function addWelderNameField() {
+      if (!isManagerRole()) return;
+      const inputs = Array.from(document.querySelectorAll(".welder-name-input"));
+      welderNames = inputs.length ? inputs.map(input => input.value.trim()) : (welderNames || []).slice();
+      welderNames.push(`Welder ${welderNames.length + 1}`);
+      renderWelderSettings();
+    }
+
+    function removeWelderNameField(index) {
+      if (!isManagerRole() || !Array.isArray(welderNames) || welderNames.length <= 2) return;
+      const inputs = Array.from(document.querySelectorAll(".welder-name-input"));
+      const values = inputs.length ? inputs.map(input => input.value.trim()) : welderNames.slice();
+      values.splice(index, 1);
+      welderNames = values;
+      renderWelderSettings();
+    }
+
     function populateWelderDropdown(selectId = "fInspWelder", selectedValue = "") {
       const sel = document.getElementById(selectId);
       if (!sel) return;
-      const names = (welderNames || ["Welder 1", "Welder 2"]).map((v, i) => String(v || `Welder ${i + 1}`).trim());
-      const values = [...new Set(names.filter(Boolean))];
+      const names = (welderNames || ["Welder 1", "Welder 2"]).map(v => String(v || "").trim()).filter(Boolean);
+      const values = [...new Set(names)];
       if (selectedValue && !values.includes(selectedValue)) values.push(selectedValue);
-      sel.innerHTML = values.map(name => `<option value="${name}">${name}</option>`).join("");
+      sel.innerHTML = values.map(name => `<option value="${escapeHtmlText(name)}">${escapeHtmlText(name)}</option>`).join("");
       if (selectedValue && values.includes(selectedValue)) sel.value = selectedValue;
     }
 
     async function saveWelderNames() {
       if (!isManagerRole()) return;
-      const first = document.getElementById("welderName1").value.trim();
-      const second = document.getElementById("welderName2").value.trim();
-      if (!first || !second) {
-        alert("Nama Welder 1 dan Welder 2 wajib diisi.");
+      const inputs = Array.from(document.querySelectorAll(".welder-name-input"));
+      const names = inputs.map(input => input.value.trim());
+      if (names.length < 2 || names.some(name => !name)) {
+        alert("Minimal dua nama welder harus diisi. Tidak boleh ada nama kosong.");
         return;
       }
-      if (first.toLowerCase() === second.toLowerCase()) {
-        alert("Nama Welder 1 dan Welder 2 harus berbeda.");
+      const normalized = names.map(name => name.toLowerCase());
+      if (new Set(normalized).size !== normalized.length) {
+        alert("Nama welder tidak boleh duplikat.");
         return;
       }
-      welderNames = [first, second];
-      welderNamesOverride = welderNames.slice();
-      localStorage.setItem("tangguh_v2_welder_names", JSON.stringify(welderNames));
-      localStorage.setItem("tangguh_v2_welder_names_local_override", JSON.stringify(welderNamesOverride));
-      populateWelderDropdown();
+      if (!apiUrl || !apiUrl.startsWith("http") || !currentSessionToken) {
+        alert("Sesi atau koneksi database tidak tersedia. Silakan login ulang.");
+        return;
+      }
 
-      let cloudSaved = false;
-      if (apiUrl && apiUrl.startsWith("http")) {
-        try {
-          const res = await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "updateWelderNames", welderNames, userName: currentUser.nama })
-          });
-          const data = await res.json();
-          cloudSaved = data.status === "success";
-        } catch (err) {
-          console.warn("Welder names local fallback:", err);
-        }
-      }
-      if (cloudSaved) {
+      const feedback = document.getElementById("welderSettingsFeedback");
+      feedback.textContent = "Menyimpan daftar welder ke Google Sheets...";
+      try {
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ sessionToken: currentSessionToken, action: "updateWelderNames", welderNames: names, userName: currentUser.nama })
+        });
+        const data = await res.json();
+        if (!res.ok || data.status !== "success") throw new Error(data.message || "Daftar welder gagal disimpan.");
+        welderNames = Array.isArray(data.welderNames) ? data.welderNames : names;
         welderNamesOverride = null;
+        localStorage.setItem("tangguh_v2_welder_names", JSON.stringify(welderNames));
         localStorage.removeItem("tangguh_v2_welder_names_local_override");
+        renderWelderSettings();
+        populateWelderDropdown();
+        feedback.textContent = `${welderNames.length} nama welder berhasil disimpan ke database dan akan tersedia pada form inspeksi.`;
+        alert("Daftar nama welder berhasil disimpan ke Google Sheets.");
+      } catch (err) {
+        feedback.textContent = "Gagal menyimpan daftar welder ke database.";
+        alert("PENYIMPANAN NAMA WELDER GAGAL.\n\n" + (err.message || String(err)));
       }
-      document.getElementById("welderSettingsFeedback").textContent = cloudSaved
-        ? "Nama welder berhasil disimpan dan dikonfirmasi oleh Google Sheets."
-        : "Nama welder tersimpan pada browser ini. Sinkronisasi ke perangkat lain belum dikonfirmasi oleh Google Apps Script.";
-      alert(cloudSaved
-        ? "Nama pilihan welder berhasil diperbarui pada database."
-        : "Nama pilihan welder berhasil disimpan pada browser ini. Sinkronisasi database belum dikonfirmasi oleh Google Apps Script.");
     }
 
     // ==================== MENU 3: INPUT INSPEKSI & APPROVAL JAKARTA ====================
@@ -3282,6 +3444,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
+              sessionToken: currentSessionToken,
               action: "addInspection",
               tagBundel,
               bangunan: bldg,
@@ -3536,6 +3699,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
+              sessionToken: currentSessionToken,
               action: "updateInspection",
               idLog,
               tagBundel: updatedLog.tagBundel,
@@ -3593,6 +3757,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
+              sessionToken: currentSessionToken,
               action: "deleteInspection",
               idLog,
               userName: currentUser.nama
@@ -3679,6 +3844,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
+              sessionToken: currentSessionToken,
               action: "resolveRework",
               idLog,
               catatanRepair: note,
@@ -3748,6 +3914,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
+              sessionToken: currentSessionToken,
               action: "approveLog",
               idLog,
               statusApproval: dec,
@@ -3955,6 +4122,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
+              sessionToken: currentSessionToken,
               action: "submitShipping",
               idLogs: idArr,
               noKontainer: noCont,
@@ -4028,6 +4196,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
+              sessionToken: currentSessionToken,
               action: "submitPapuaIncoming",
               idLog,
               tglTerimaPapua: tgl,
@@ -4383,6 +4552,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
+              sessionToken: currentSessionToken,
               action: "upsertBoqDoc",
               ...updatedObj,
               kodeWarna: updatedObj.warna,
@@ -4429,25 +4599,46 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
     async function deleteBoqDoc(idItem) {
       const b = boqItems.find(x => x.idItem === idItem);
       if (!b) return;
-      if (!confirm(`Hapus item BOQ "${b.kodeItem} — ${b.namaItem}" (${b.bangunan})?\nItem yang dihapus akan hilang dari daftar target BOQ.`)) {
+      const relatedLogs = logs.filter(l => l.bangunan === b.bangunan && l.kodeItem === b.kodeItem);
+      const promptText = `HAPUS MASTER BOQ DAN SELURUH DATA TERKAIT?\n\n${b.kodeItem} — ${b.namaItem}\nArea: ${b.bangunan}\n\nSebanyak ${relatedLogs.length} log inspeksi beserta approval, Rework, pengiriman, dan status QC Incoming terkait akan dihapus dari data operasional.\n\nFile foto di Google Drive tidak dihapus otomatis dan tetap tersimpan sebagai arsip.\n\nTindakan ini tidak dapat dibatalkan.`;
+      if (!confirm(promptText)) return;
+      if (!apiUrl || !apiUrl.startsWith("http") || !currentSessionToken) {
+        alert("Penghapusan dibatalkan. Database atau sesi login tidak tersedia.");
         return;
       }
 
-      boqItems = boqItems.filter(x => x.idItem !== idItem);
-      saveLocalAll();
-      renderDocControl();
+      const button = document.querySelector(`[onclick="deleteBoqDoc('${idItem}')"]`);
+      if (button) { button.disabled = true; button.textContent = "Menghapus..."; }
+      try {
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "deleteBoqDoc", idItem: idItem, sessionToken: currentSessionToken, userName: currentUser.nama })
+        });
+        const data = await res.json();
+        if (!res.ok || !data || data.status !== "success") {
+          throw new Error(data && data.message ? data.message : "Google Apps Script gagal menghapus data BOQ.");
+        }
 
-      if (apiUrl && apiUrl.startsWith("http")) {
-        try {
-          await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({
-              action: "deleteBoqDoc",
-              idItem: idItem
-            })
-          });
-        } catch (e) { console.warn(e); }
+        boqItems = boqItems.filter(x => x.idItem !== idItem);
+        logs = logs.filter(l => !(l.bangunan === b.bangunan && l.kodeItem === b.kodeItem));
+        const overrides = JSON.parse(localStorage.getItem("tangguh_v2_inspection_overrides")) || {};
+        relatedLogs.forEach(log => delete overrides[log.idLog]);
+        localStorage.setItem("tangguh_v2_inspection_overrides", JSON.stringify(overrides));
+        saveLocalAll();
+        dashBoqPage = 1;
+        guestDataPage = 1;
+        docBoqPage = 1;
+        await syncFromCloud(true);
+        renderDocControl();
+        renderDashboard();
+        renderSidebarNav();
+        alert(`Item BOQ berhasil dihapus. ${Number(data.relatedLogsDeleted || relatedLogs.length)} log inspeksi terkait juga telah dihapus dari Google Sheets.`);
+      } catch (err) {
+        console.error("deleteBoqDoc failed:", err);
+        alert("PENGHAPUSAN GAGAL. Data tidak diubah pada tampilan lokal.\n\n" + (err.message || String(err)));
+      } finally {
+        if (button) { button.disabled = false; button.textContent = "Hapus"; }
       }
     }
 
@@ -4798,28 +4989,23 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       localStorage.setItem("tangguh_v2_api_url", apiUrl);
       updateConnIndicators();
       closeModal("dbModal");
-      if (apiUrl) {
+      if (apiUrl && currentUser && currentSessionToken) {
         await syncFromCloud(false);
       }
     }
 
     async function syncFromCloud(silent) {
-      if (!apiUrl || !apiUrl.startsWith("http")) return;
+      if (!apiUrl || !apiUrl.startsWith("http") || !currentSessionToken) return false;
       const pillTxt = document.getElementById("connPillText");
       if (pillTxt) pillTxt.textContent = "Menyinkronkan...";
       try {
-        const res = await fetch(apiUrl + "?t=" + Date.now());
+        const res = await fetch(apiUrl + "?t=" + Date.now() + "&sessionToken=" + encodeURIComponent(currentSessionToken));
         const data = await res.json();
+        if (!res.ok || data.status !== "success") throw new Error(data.message || "Sinkronisasi gagal atau sesi berakhir.");
         if (data.status === "success") {
           if (data.buildings && data.buildings.length > 0) buildingList = data.buildings;
           if (Array.isArray(buildingListOverride)) buildingList = buildingListOverride.map(b => ({...b}));
-          if (data.users && data.users.length > 0) {
-            masterUsers = data.users;
-            if (!masterUsers.some(u => u.role === "Guest")) {
-              masterUsers.push({ userId: "USR-06", username: "guest", sandi: "GUEST123", nama: "Guest (Monitoring Data)", role: "Guest", aksesBangunan: "Semua", bisaInput: false, bisaApprove: false, kelolaDocBoq: false });
-            }
-          }
-          if (data.boqItems && data.boqItems.length > 0) boqItems = data.boqItems;
+          if (Array.isArray(data.boqItems)) boqItems = data.boqItems;
           if (data.logs) logs = data.logs.slice().reverse();
           buildingRenameMap = JSON.parse(localStorage.getItem("tangguh_v2_building_rename_map")) || {};
           const resolveBuildingName = originalName => {
@@ -4835,10 +5021,13 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           logs = logs.map(log => ({...log, bangunan: resolveBuildingName(log.bangunan)}));
           inspectionOverrides = JSON.parse(localStorage.getItem("tangguh_v2_inspection_overrides")) || {};
           logs = logs.map(log => inspectionOverrides[log.idLog] ? {...log, ...inspectionOverrides[log.idLog]} : log);
-          if (Array.isArray(data.welderNames) && data.welderNames.length >= 2) welderNames = data.welderNames.slice(0, 2);
-          welderNamesOverride = JSON.parse(localStorage.getItem("tangguh_v2_welder_names_local_override")) || null;
-          if (Array.isArray(welderNamesOverride)) welderNames = welderNamesOverride.slice();
-          else if (!Array.isArray(data.welderNames)) welderNames = JSON.parse(localStorage.getItem("tangguh_v2_welder_names")) || welderNames || ["Welder 1", "Welder 2"];
+          if (Array.isArray(data.welderNames) && data.welderNames.length >= 2) {
+            welderNames = data.welderNames.map(String);
+            welderNamesOverride = null;
+            localStorage.removeItem("tangguh_v2_welder_names_local_override");
+          } else {
+            welderNames = JSON.parse(localStorage.getItem("tangguh_v2_welder_names")) || welderNames || ["Welder 1", "Welder 2"];
+          }
           saveLocalAll();
           updateConnIndicators();
           if (currentUser) {
@@ -4847,9 +5036,11 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           }
           if (!silent) alert("Sinkronisasi dengan Google Sheets & Google Drive berhasil!");
         }
+        return true;
       } catch (err) {
         if (pillTxt) pillTxt.textContent = "Gagal Sync (Cek URL)";
-        if (!silent) alert("Gagal terhubung ke Google Sheets. Pastikan URL Web App berakhiran /exec dan akses disetel 'Anyone'.");
+        if (!silent) alert(err.message || "Gagal terhubung ke Google Sheets. Periksa URL Web App dan sesi login.");
+        return false;
       }
     }
 
