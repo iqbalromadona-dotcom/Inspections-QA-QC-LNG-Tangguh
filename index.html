@@ -314,6 +314,26 @@
       padding: 9px 10px; border-bottom: 2px solid var(--border); white-space: nowrap;
     }
     td { padding: 9px 10px; border-bottom: 1px solid var(--slate-200); vertical-align: middle; }
+
+    /* Dashboard BOQ: kolom angka dibuat ringkas agar tabel proporsional pada layar desktop. */
+    .table-wrap table.dashboard-boq-table {
+      width:100%; min-width:0; table-layout:fixed; font-size:0.73rem;
+    }
+    .dashboard-boq-table th {
+      padding:7px 4px; font-size:0.68rem; line-height:1.2; text-align:center;
+      white-space:normal; overflow-wrap:anywhere; vertical-align:middle;
+    }
+    .dashboard-boq-table td {
+      padding:7px 5px; font-size:0.73rem; vertical-align:middle;
+    }
+    .dashboard-boq-table td:nth-child(1),
+    .dashboard-boq-table td:nth-child(2) { white-space:nowrap; }
+    .dashboard-boq-table td:nth-child(3) { overflow-wrap:anywhere; }
+    .dashboard-boq-table td:nth-child(4),
+    .dashboard-boq-table td:nth-child(5) { text-align:center; }
+    @media (max-width:900px) {
+      .table-wrap table.dashboard-boq-table { min-width:1050px; }
+    }
     tfoot td { background: var(--slate-100); font-weight: 800; border-top: 2px solid var(--border); }
     tr:hover td { background: var(--slate-50); }
     .text-right { text-align: right; }
@@ -776,23 +796,40 @@
                 </div>
               </div>
               <div class="table-wrap">
-                <table>
+                <table class="dashboard-boq-table">
+                  <colgroup>
+                    <col style="width:5%;">
+                    <col style="width:5%;">
+                    <col style="width:20.5%;">
+                    <col style="width:4.5%;">
+                    <col style="width:6%;">
+                    <col style="width:5%;">
+                    <col style="width:7%;">
+                    <col style="width:5%;">
+                    <col style="width:8%;">
+                    <col style="width:4%;">
+                    <col style="width:5%;">
+                    <col style="width:4.5%;">
+                    <col style="width:5.5%;">
+                    <col style="width:7%;">
+                    <col style="width:8%;">
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Bangunan</th>
                       <th>Kode Item</th>
                       <th>Deskripsi Item</th>
-                      <th class="text-center">Welder</th>
-                      <th class="text-center">Metode Tagging</th>
-                      <th class="text-right" title="Jumlah kode tag fisik yang sudah diregistrasi, bukan jumlah unit">Qty Tag Terdaftar</th>
-                      <th class="text-right">Berat Satuan</th>
-                      <th class="text-right">Target BOQ</th>
-                      <th class="text-right">Total Berat BOQ</th>
-                      <th class="text-right">Lolos QC</th>
-                      <th class="text-right">Approved</th>
-                      <th class="text-right">Rework</th>
-                      <th class="text-right">Tiba Papua</th>
-                      <th class="text-right">Kurang / Sisa</th>
+                      <th>Welder</th>
+                      <th>JENIS</th>
+                      <th title="Jumlah kode tag fisik yang sudah diregistrasi, bukan jumlah unit">JML TAG</th>
+                      <th>Berat Satuan</th>
+                      <th>BOQ</th>
+                      <th>Total Berat BOQ</th>
+                      <th>QC</th>
+                      <th>Approved</th>
+                      <th>Rework</th>
+                      <th>Tiba Papua</th>
+                      <th>Kurang / Sisa</th>
                       <th>Status Visual</th>
                     </tr>
                   </thead>
