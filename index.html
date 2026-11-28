@@ -916,11 +916,11 @@
               <div class="barcode-banner">
                 <div>
                   <div style="font-size:0.82rem; font-weight:800; color:var(--navy);">Scan Barcode Tagging Fisik (Auto Input QC = OK)</div>
-                  <div style="font-size:0.74rem; color:var(--slate-600);">Arahkan kamera ke barcode atau tembak dengan scanner fisik sesuai Kode Item untuk langsung masuk form QC OK</div>
+                  <div style="font-size:0.74rem; color:var(--slate-600);">Scan Kode Tag Fisik format AREA-KODEITEM-NOMOR (contoh OFC-P1-001) untuk memilih area dan item BOQ secara otomatis</div>
                 </div>
                 <div class="barcode-input-group">
                   <button type="button" class="btn btn-dark btn-sm" onclick="openBarcodeScanner('jakarta')">Scan Kamera Barcode</button>
-                  <input type="text" id="jktBarcodeInput" class="form-control" style="width:190px; padding:6px 9px; font-size:0.8rem;" placeholder="Scan / Ketik Kode Item..." onkeydown="if(event.key==='Enter'){event.preventDefault(); processJakartaBarcode(this.value);}" />
+                  <input type="text" id="jktBarcodeInput" class="form-control" style="width:190px; padding:6px 9px; font-size:0.8rem;" placeholder="Scan Kode Tag Fisik..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); event.stopPropagation(); processJakartaBarcode(this.value);}" />
                   <button type="button" class="btn btn-primary btn-sm" onclick="processJakartaBarcode(document.getElementById('jktBarcodeInput').value)">Proses Kode</button>
                 </div>
                 <div id="jktScanFeedback" class="scan-feedback" style="width:100%;"></div>
@@ -1178,7 +1178,7 @@
                 <span class="pill pill-purple">Scan cepat</span>
               </div>
               <div class="papua-scan-row">
-                <input type="text" id="papuaBarcodeInput" class="form-control" placeholder="Scan Kode Tag Fisik di sini..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); processPapuaBarcode(this.value);}" />
+                <input type="text" id="papuaBarcodeInput" class="form-control" placeholder="Scan Kode Tag Fisik di sini..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); event.stopPropagation(); processPapuaBarcode(this.value);}" />
                 <button type="button" class="btn btn-primary" onclick="processPapuaBarcode(document.getElementById('papuaBarcodeInput').value)">Proses Scan</button>
                 <button type="button" class="btn btn-light btn-sm" onclick="openBarcodeScanner('papua')">Kamera</button>
               </div>
@@ -1452,7 +1452,7 @@
         <textarea id="papuaCatatan" class="form-control" rows="2" placeholder="Contoh: Jumlah batang & karung baut lengkap, cat kode warna jelas, siap instalasi."></textarea>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-light" onclick="closeModal('papuaModal')">Batal</button>
+        <button class="btn btn-light" onclick="closeModal('papuaModal'); setTimeout(() => document.getElementById('papuaBarcodeInput').focus(), 100)">Batal</button>
         <button class="btn btn-success" id="btnSubmitPapua" onclick="submitPapuaIncoming()">Konfirmasi Penerimaan</button>
       </div>
     </div>
@@ -1639,6 +1639,7 @@
     let bcScannerMode = "jakarta"; // 'jakarta' | 'papua'
     let bcStream = null;
     let bcAnimFrame = null;
+    let bcScanGeneration = 0;
     let papuaScanQuery = "";
 
     // Peta Kode Warna Fleksibel (untuk Document Control)
@@ -3284,64 +3285,150 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
     }
 
     // ==================== BARCODE SCANNER ENGINE (JAKARTA & PAPUA) ====================
+    function normalizeBarcodeText(rawValue) {
+      let value = String(rawValue == null ? "" : rawValue)
+        .replace(/[\u0000-\u001f\u007f]/g, "")
+        .trim();
+      // Beberapa scanner mengirim AIM symbology identifier dan pembungkus Code 39.
+      value = value.replace(/^\](?:C0|C1|A0|Q3|d2)/i, "");
+      value = value.replace(/^\*+|\*+$/g, "");
+      return value.replace(/\s+/g, "").toUpperCase();
+    }
+
+    function clearInspectionSelectionAfterBarcodeError(message) {
+      const codeSelect = document.getElementById("fInspKode");
+      if (codeSelect) codeSelect.value = "";
+      clearInspectionItemSelection(message);
+      const feedback = document.getElementById("jktScanFeedback");
+      if (feedback) {
+        feedback.className = "scan-feedback err";
+        feedback.textContent = message;
+      }
+    }
+
+    function findJakartaBarcodeMatch(code) {
+      const tagMatches = [];
+      const plainItemMatches = [];
+
+      // Cocokkan dengan prefix area + kode item secara utuh.
+      // Sufiks numerik adalah nomor urut Kode Tag Fisik, BUKAN nomor unit material.
+      for (const item of boqItems) {
+        const building = buildingList.find(b => b.name === item.bangunan);
+        if (!building) continue;
+        const buildingCode = String(building.code || getBuildingCode(item.bangunan)).trim().toUpperCase();
+        const itemCode = String(item.kodeItem || "").trim().toUpperCase();
+        if (!buildingCode || !itemCode) continue;
+
+        const itemPrefix = `${buildingCode}-${itemCode}`;
+        if (code === itemPrefix) {
+          plainItemMatches.push({ item, tagCode: "" });
+          continue;
+        }
+
+        const tagPrefix = `${itemPrefix}-`;
+        if (code.startsWith(tagPrefix)) {
+          const suffix = code.slice(tagPrefix.length);
+          if (/^\d{1,6}$/.test(suffix)) {
+            const normalizedSuffix = suffix.padStart(3, "0");
+            tagMatches.push({ item, tagCode: `${tagPrefix}${normalizedSuffix}` });
+          }
+        }
+
+        // Dukungan scan langsung Kode Item tanpa prefix area/tag.
+        if (code === itemCode) plainItemMatches.push({ item, tagCode: "" });
+      }
+
+      if (tagMatches.length === 1) return { match: tagMatches[0], error: "" };
+      if (tagMatches.length > 1) return { match: null, error: `Barcode ${code} cocok dengan lebih dari satu item BOQ. Periksa kode area dan kode item.` };
+
+      if (plainItemMatches.length === 1) return { match: plainItemMatches[0], error: "" };
+      if (plainItemMatches.length > 1) {
+        const activeMatch = plainItemMatches.find(x => x.item.bangunan === activeBuilding);
+        if (activeMatch) return { match: activeMatch, error: "" };
+        return { match: null, error: `Kode item ${code} terdapat pada lebih dari satu bangunan. Gunakan barcode lengkap AREA-KODEITEM-NOMOR.` };
+      }
+
+      return { match: null, error: `Barcode ${code} tidak cocok secara persis dengan Kode Tag Fisik atau Kode Item pada Master BOQ.` };
+    }
+
     async function openBarcodeScanner(mode) {
-      bcScannerMode = mode; // 'jakarta' or 'papua'
+      closeBarcodeScanner();
+      const scanGeneration = ++bcScanGeneration;
+      const scanMode = mode === "papua" ? "papua" : "jakarta";
+      bcScannerMode = scanMode;
+
       const modal = document.getElementById("barcodeScannerModal");
       const video = document.getElementById("bcVideoEl");
       const notice = document.getElementById("bcCamNotice");
       const manualInp = document.getElementById("bcModalManualInp");
 
-      document.getElementById("bcModalTitle").textContent = mode === "jakarta"
-        ? "Scan Barcode Fisik — Auto Input QC Jakarta"
-        : "Scan Barcode Tagging Fisik — QC Incoming Papua";
-      document.getElementById("bcModalDesc").textContent = mode === "jakarta"
-        ? "Arahkan kamera ke barcode sesuai Kode Item untuk langsung masuk ke form QC (OK)."
-        : "Arahkan kamera ke barcode Kode Tag Fisik / Kode Item pada material yang tiba di Papua.";
+      document.getElementById("bcModalTitle").textContent = scanMode === "jakarta"
+        ? "Scan Kode Tag Fisik — Input QC Jakarta"
+        : "Scan Kode Tag Fisik — QC Incoming Papua";
+      document.getElementById("bcModalDesc").textContent = scanMode === "jakarta"
+        ? "Scan barcode format AREA-KODEITEM-NOMOR, misalnya OFC-P1-001. Nomor terakhir adalah urutan tag, bukan nomor unit."
+        : "Scan Kode Tag Fisik pada material yang berstatus Dalam Pengiriman.";
 
       manualInp.value = "";
+      video.removeAttribute("src");
+      video.srcObject = null;
+      video.style.display = "none";
       modal.classList.add("show");
+      notice.textContent = "Mengaktifkan kamera...";
       setTimeout(() => manualInp.focus(), 150);
 
       try {
-        bcStream = await navigator.mediaDevices.getUserMedia({
+        const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: "environment" } },
           audio: false
         });
-        video.srcObject = bcStream;
+        if (scanGeneration !== bcScanGeneration) {
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+        bcStream = stream;
+        video.srcObject = stream;
         video.style.display = "block";
 
         if ("BarcodeDetector" in window) {
-          notice.textContent = "Kamera aktif — Arahkan barcode ke kotak kamera...";
+          notice.textContent = "Kamera aktif — arahkan barcode ke kamera...";
           const detector = new BarcodeDetector({
             formats: ["code_128", "code_39", "ean_13", "ean_8", "qr_code", "data_matrix", "upc_a"]
           });
           const scanLoop = async () => {
-            if (!bcStream) return;
+            if (scanGeneration !== bcScanGeneration || !bcStream) return;
             try {
               if (video.readyState === video.HAVE_ENOUGH_DATA) {
                 const barcodes = await detector.detect(video);
+                if (scanGeneration !== bcScanGeneration) return;
                 if (barcodes && barcodes.length > 0) {
                   const rawCode = barcodes[0].rawValue;
                   closeBarcodeScanner();
-                  if (bcScannerMode === "jakarta") processJakartaBarcode(rawCode);
+                  if (scanMode === "jakarta") processJakartaBarcode(rawCode);
                   else processPapuaBarcode(rawCode);
                   return;
                 }
               }
-            } catch (e) {}
-            bcAnimFrame = requestAnimationFrame(scanLoop);
+            } catch (e) {
+              // Deteksi dilanjutkan pada frame berikutnya.
+            }
+            if (scanGeneration === bcScanGeneration) {
+              bcAnimFrame = requestAnimationFrame(scanLoop);
+            }
           };
           bcAnimFrame = requestAnimationFrame(scanLoop);
         } else {
-          notice.textContent = "Kamera aktif. Jika browser tidak mendukung deteksi optik otomatis, silakan tembak scanner fisik atau ketik kode di bawah.";
+          notice.textContent = "Kamera aktif. Jika browser tidak mendukung pembacaan otomatis, gunakan scanner fisik atau kolom kode.";
         }
       } catch (err) {
+        if (scanGeneration !== bcScanGeneration) return;
         video.style.display = "none";
-        notice.textContent = "Kamera tidak tersedia — Silakan tembak alat barcode scanner fisik atau ketik kode di bawah ini.";
+        notice.textContent = "Kamera tidak tersedia — gunakan scanner fisik atau ketik kode secara manual.";
       }
     }
 
     function closeBarcodeScanner() {
+      bcScanGeneration++;
       if (bcAnimFrame) {
         cancelAnimationFrame(bcAnimFrame);
         bcAnimFrame = null;
@@ -3350,130 +3437,169 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         bcStream.getTracks().forEach(t => t.stop());
         bcStream = null;
       }
-      document.getElementById("barcodeScannerModal").classList.remove("show");
+      const video = document.getElementById("bcVideoEl");
+      if (video) {
+        video.pause();
+        video.srcObject = null;
+        video.style.display = "none";
+      }
+      const modal = document.getElementById("barcodeScannerModal");
+      if (modal) modal.classList.remove("show");
     }
 
     function confirmModalBarcode() {
-      const val = document.getElementById("bcModalManualInp").value.trim();
-      if (!val) return;
+      const manualInp = document.getElementById("bcModalManualInp");
+      const val = manualInp ? manualInp.value : "";
+      const mode = bcScannerMode;
+      if (manualInp) manualInp.value = "";
+      if (!normalizeBarcodeText(val)) return;
       closeBarcodeScanner();
-      if (bcScannerMode === "jakarta") processJakartaBarcode(val);
+      if (mode === "jakarta") processJakartaBarcode(val);
       else processPapuaBarcode(val);
     }
 
-    // Proses Scan Barcode di Workshop Jakarta -> Langsung pilih Kode Item, Unit (jika ada), & Status QC = OK
+    // Scan Jakarta: pilih area + item BOQ tepat berdasarkan Kode Tag Fisik.
+    // Contoh OFC-P1-001 = Office / P1 / tag urut 001; 001 bukan nomor unit.
     function processJakartaBarcode(rawVal) {
-      const code = String(rawVal || "").trim().toUpperCase();
-      if (!code) return;
+      const code = normalizeBarcodeText(rawVal);
+      const input = document.getElementById("jktBarcodeInput");
+      if (input) input.value = "";
       const fb = document.getElementById("jktScanFeedback");
-
-      // Cari kecocokan dengan kodeItem pada boqItems (mendukung format 'K1', 'OFC-K1', 'OFC-K1-005', 'K1-005')
-      let matchedItem = boqItems.find(b => b.kodeItem.toUpperCase() === code);
-      let extractedUnit = "";
-
-      if (!matchedItem) {
-        // Coba pecah berdasarkan strip '-' atau '|'
-        const parts = code.split(/[-|/]/);
-        for (const b of boqItems) {
-          const kUp = b.kodeItem.toUpperCase();
-          if (code.includes(kUp)) {
-            matchedItem = b;
-            // Cek apakah bagian terakhir adalah angka 3 digit nomor unit (misal 005)
-            const lastPart = parts[parts.length - 1];
-            if (/^\d{1,3}$/.test(lastPart) && lastPart !== kUp) {
-              extractedUnit = lastPart.padStart(3, "0");
-            }
-            break;
-          }
-        }
-      }
-
-      if (!matchedItem) {
-        fb.className = "scan-feedback err";
-        fb.textContent = `Barcode "${code}" tidak cocok dengan Kode Item BOQ mana pun. Periksa kode item di Master BOQ.`;
+      if (!code) {
+        clearInspectionSelectionAfterBarcodeError("Barcode kosong. Silakan scan ulang.");
         return;
       }
 
-      // Otomatis pindah bangunan jika berbeda
-      if (activeBuilding !== "Gabungan" && activeBuilding !== matchedItem.bangunan) {
+      const result = findJakartaBarcodeMatch(code);
+      if (!result.match) {
+        clearInspectionSelectionAfterBarcodeError(result.error);
+        if (input) input.focus();
+        return;
+      }
+
+      const matchedItem = result.match.item;
+      const scannedTag = result.match.tagCode;
+
+      // Kode Tag Fisik yang sudah pernah digunakan tidak boleh dipakai untuk transaksi baru.
+      if (scannedTag) {
+        const existingLog = logs.find(l => normalizeBarcodeText(l.tagBundel) === scannedTag);
+        if (existingLog) {
+          clearInspectionSelectionAfterBarcodeError(
+            `Kode Tag Fisik ${scannedTag} sudah pernah digunakan pada ${existingLog.kodeItem} (${existingLog.unitList || "unit tercatat"}) dengan status ${existingLog.statusApproval || existingLog.statusQc}. Gunakan label/tag yang belum tercatat.`
+          );
+          if (input) input.focus();
+          return;
+        }
+      }
+
+      // Pindah area secara otomatis, lalu pilih item BOQ yang cocok.
+      if (activeBuilding !== matchedItem.bangunan) {
         activeBuilding = matchedItem.bangunan;
         renderBuildingSwitcher();
       }
-      const bSel = document.getElementById("fInspBangunan");
-      bSel.value = matchedItem.bangunan;
+      const buildingSelect = document.getElementById("fInspBangunan");
+      buildingSelect.value = matchedItem.bangunan;
       onInspBuildingChange();
 
-      // Otomatis pilih Kode Item
-      const kSel = document.getElementById("fInspKode");
-      kSel.value = matchedItem.kodeItem;
+      const itemSelect = document.getElementById("fInspKode");
+      itemSelect.value = matchedItem.kodeItem;
       onInspItemChange();
 
-      // Otomatis set Status Pemeriksaan = OK
-      document.getElementById("fInspStatusQc").value = "OK";
-
-      // Pilih unit spesifik jika terbaca dari barcode, atau pilih 1 unit pertama yang belum di-QC
-      if (extractedUnit) {
-        const stMap = getUnitStatusMap(matchedItem.bangunan, matchedItem.kodeItem);
-        if (!stMap[extractedUnit]) {
-          selectedUnits.add(extractedUnit);
-          renderUnitDropdownList();
-        }
-      } else {
-        selectNextAvailableUnits(1);
+      if (!itemSelect.value || itemSelect.value !== matchedItem.kodeItem) {
+        clearInspectionSelectionAfterBarcodeError(`Item ${matchedItem.kodeItem} tidak berhasil dipilih. Periksa Master BOQ dan area bangunan.`);
+        if (input) input.focus();
+        return;
       }
 
-      document.getElementById("jktBarcodeInput").value = "";
-      fb.className = "scan-feedback ok";
-      fb.textContent = `Barcode "${code}" terbaca! Item ${matchedItem.kodeItem} (${matchedItem.namaItem}) & Status LOLOS QA/QC (OK) otomatis dipilih. Silakan lengkapi pilihan unit & foto bukti.`;
+      // Status otomatis OK. Sufiks barcode tidak dimasukkan ke pilihan nomor unit.
+      document.getElementById("fInspStatusQc").value = "OK";
+      const tagBadge = document.getElementById("nextBundleBadge");
+      if (scannedTag) {
+        tagBadge.dataset.tag = scannedTag;
+        tagBadge.dataset.tagSource = "barcode";
+        tagBadge.textContent = `Kode Tag Fisik Dipindai: ${scannedTag}`;
+      } else {
+        tagBadge.dataset.tagSource = "generated";
+      }
+
+      if (fb) {
+        fb.className = "scan-feedback ok";
+        fb.textContent = scannedTag
+          ? `Barcode ${scannedTag} cocok. Area ${matchedItem.bangunan} dan BOQ ${matchedItem.kodeItem} — ${matchedItem.namaItem} otomatis dipilih. Pilih nomor unit sesuai isi fisik bundle.`
+          : `Kode item ${matchedItem.kodeItem} otomatis dipilih. Pilih nomor unit sesuai isi fisik bundle.`;
+      }
+      if (input) input.focus();
     }
 
-    // Proses Scan Barcode di Site Papua -> Langsung buka modal QC Incoming Papua!
+    // Scan Papua: hanya cocokkan Kode Tag Fisik yang sama persis dengan log Dalam Pengiriman.
     function processPapuaBarcode(rawVal) {
-      const code = String(rawVal || "").trim().toUpperCase();
-      if (!code) return;
+      const code = normalizeBarcodeText(rawVal);
+      const input = document.getElementById("papuaBarcodeInput");
+      if (input) input.value = "";
       const fb = document.getElementById("papuaScanFeedback");
-      const candidates = logs.filter(l =>
-        l.statusTracking === "Dalam Pengiriman" &&
-        String(l.tagBundel || "").trim().toUpperCase() === code
-      );
-      document.getElementById("papuaBarcodeInput").value = "";
+      if (!code) {
+        if (fb) { fb.className = "scan-feedback err"; fb.textContent = "Barcode kosong. Silakan scan ulang."; }
+        if (input) input.focus();
+        return;
+      }
+      if (fb) { fb.className = "scan-feedback"; fb.textContent = ""; }
+
+      const exactTagRecords = logs.filter(l => normalizeBarcodeText(l.tagBundel) === code);
+      if (exactTagRecords.length > 1) {
+        if (fb) {
+          fb.className = "scan-feedback err";
+          fb.textContent = `Kode Tag Fisik ${code} tercatat lebih dari satu kali di database. Proses dihentikan agar tidak salah memilih material.`;
+        }
+        if (input) input.focus();
+        return;
+      }
+      const candidates = exactTagRecords.filter(l => l.statusTracking === "Dalam Pengiriman");
 
       if (candidates.length === 1) {
         const targetLog = candidates[0];
-        fb.className = "scan-feedback ok";
-        fb.textContent = `Kode Tag Fisik ${targetLog.tagBundel} cocok. Silakan konfirmasi penerimaan material.`;
+        if (fb) {
+          fb.className = "scan-feedback ok";
+          fb.textContent = `Kode Tag Fisik ${targetLog.tagBundel} cocok dengan ${targetLog.kodeItem}, unit ${targetLog.unitList}. Membuka konfirmasi penerimaan.`;
+        }
         openPapuaIncomingModal(targetLog.idLog);
         return;
       }
       if (candidates.length > 1) {
-        fb.className = "scan-feedback err";
-        fb.textContent = `Kode Tag Fisik ${code} ditemukan lebih dari satu kali. Periksa duplikasi pada database sebelum QC Incoming.`;
+        if (fb) {
+          fb.className = "scan-feedback err";
+          fb.textContent = `Kode Tag Fisik ${code} ditemukan pada lebih dari satu log pengiriman. Periksa duplikasi database sebelum penerimaan.`;
+        }
+        if (input) input.focus();
         return;
       }
 
       const alreadyDone = logs.find(l =>
-        l.statusTracking === "QC Incoming Papua" &&
-        String(l.tagBundel || "").trim().toUpperCase() === code
+        l.statusTracking === "QC Incoming Papua" && normalizeBarcodeText(l.tagBundel) === code
       );
       if (alreadyDone) {
-        fb.className = "scan-feedback err";
-        fb.textContent = `Kode Tag Fisik ${code} sudah tercatat diterima pada ${alreadyDone.tglTerimaPapua || "tanggal yang tersimpan"}.`;
+        if (fb) {
+          fb.className = "scan-feedback err";
+          fb.textContent = `Kode Tag Fisik ${code} sudah diterima di Papua pada ${alreadyDone.tglTerimaPapua || "tanggal yang tersimpan"}.`;
+        }
+        if (input) input.focus();
         return;
       }
 
       const readyButNotShipped = logs.find(l =>
-        l.statusTracking === "Siap Kirim" &&
-        String(l.tagBundel || "").trim().toUpperCase() === code
+        l.statusTracking === "Siap Kirim" && normalizeBarcodeText(l.tagBundel) === code
       );
-      fb.className = "scan-feedback err";
-      fb.textContent = readyButNotShipped
-        ? `Kode ${code} belum berstatus Dalam Pengiriman. Catat keberangkatan terlebih dahulu pada menu Pengiriman Material.`
-        : `Kode Tag Fisik ${code} tidak ditemukan pada daftar material yang sedang dalam pengiriman.`;
+      if (fb) {
+        fb.className = "scan-feedback err";
+        fb.textContent = readyButNotShipped
+          ? `Kode ${code} belum berstatus Dalam Pengiriman. Catat keberangkatan terlebih dahulu pada menu Pengiriman Material.`
+          : `Kode Tag Fisik ${code} tidak ditemukan pada daftar material yang sedang dalam pengiriman. Pastikan barcode sama persis dengan Kode Tag Fisik pada database.`;
+      }
+      if (input) input.focus();
     }
 
     function resetPapuaScanFilter() {
       const input = document.getElementById("papuaBarcodeInput");
-      if (input) input.value = "";
+      if (input) { input.value = ""; input.focus(); }
       const fb = document.getElementById("papuaScanFeedback");
       if (fb) { fb.className = "scan-feedback"; fb.textContent = ""; }
       renderPapuaIncomingTracking();
@@ -3487,7 +3613,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const item = boqItems.find(b => b.bangunan === bldg && b.kodeItem === kode);
       const tagBundel = document.getElementById("nextBundleBadge").dataset.tag;
       if (!item || !kode || !tagBundel) {
-        alert("Inspeksi tidak dapat disimpan karena area ini belum memiliki atau belum memilih Item BOQ yang valid.");
+        alert("Inspeksi tidak dapat disimpan karena area atau Item BOQ belum dipilih dengan benar.");
         return;
       }
       const unitsArr = Array.from(selectedUnits).sort();
@@ -3499,26 +3625,34 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         alert("Wajib mengambil foto bukti fisik & label menggunakan kamera terlebih dahulu!");
         return;
       }
-
-      const btn = document.getElementById("btnSubmitInsp");
-      btn.disabled = true;
-      btn.textContent = "Menyimpan & Mengunggah Foto...";
+      if (!apiUrl || !apiUrl.startsWith("http")) {
+        alert("Koneksi Google Sheets belum tersedia. Inspeksi tidak disimpan agar tidak hanya tercatat di perangkat ini.");
+        return;
+      }
 
       const statusQc = document.getElementById("fInspStatusQc").value;
       const minggu = "-";
       const catatan = document.getElementById("fInspCatatan").value.trim();
-      const welder = item && item.prosesWelder === true ? document.getElementById("fInspWelder").value : "";
+      const welder = item.prosesWelder === true ? document.getElementById("fInspWelder").value : "";
+      if (item.prosesWelder === true && !welder) {
+        alert("Pilih nama welder untuk item BOQ yang memerlukan proses welder.");
+        return;
+      }
+
+      const btn = document.getElementById("btnSubmitInsp");
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Menyimpan & Mengunggah Foto...";
 
       const now = new Date();
       const pad = n => String(n).padStart(2, "0");
       const nowStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-
       const newLog = {
         idLog: "LOG-" + Date.now(),
         tagBundel,
         bangunan: bldg,
         kodeItem: kode,
-        namaItem: item ? item.namaItem : kode,
+        namaItem: item.namaItem || kode,
         unitList: unitsArr.join(","),
         qty: unitsArr.length,
         minggu,
@@ -3537,58 +3671,60 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         tglTerimaPapua: "", kondisiPapua: "", catatanPapua: "", fotoIncomingPapua: "", papuaBy: ""
       };
 
-      if (apiUrl && apiUrl.startsWith("http")) {
-        try {
-          const res = await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({
-              sessionToken: currentSessionToken,
-              action: "addInspection",
-              tagBundel,
-              bangunan: bldg,
-              kodeItem: kode,
-              namaItem: newLog.namaItem,
-              unitList: newLog.unitList,
-              qty: newLog.qty,
-              minggu,
-              statusQc,
-              catatanInspeksi: catatan,
-              welder,
-              fotoBase64: capturedPhotos.insp,
-              userName: currentUser.nama
-            })
-          });
-          const data = await res.json();
-          if (data.status === "success") {
-            newLog.idLog = data.idLog || newLog.idLog;
-            if (data.fotoQcOk) newLog.fotoQcOk = data.fotoQcOk;
-            if (data.fotoTemuanNg) newLog.fotoTemuanNg = data.fotoTemuanNg;
-          }
-        } catch (err) {
-          console.warn("Offline fallback save:", err);
+      try {
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            sessionToken: currentSessionToken,
+            action: "addInspection",
+            tagBundel,
+            bangunan: bldg,
+            kodeItem: kode,
+            namaItem: newLog.namaItem,
+            unitList: newLog.unitList,
+            qty: newLog.qty,
+            minggu,
+            statusQc,
+            catatanInspeksi: catatan,
+            welder,
+            fotoBase64: capturedPhotos.insp,
+            userName: currentUser.nama
+          })
+        });
+        if (!res.ok) throw new Error(`Server merespons HTTP ${res.status}.`);
+        const data = await res.json();
+        if (!data || data.status !== "success") {
+          throw new Error(data && data.message ? data.message : "Server tidak mengonfirmasi penyimpanan.");
         }
+
+        newLog.idLog = data.idLog || newLog.idLog;
+        if (data.fotoQcOk) newLog.fotoQcOk = data.fotoQcOk;
+        if (data.fotoTemuanNg) newLog.fotoTemuanNg = data.fotoTemuanNg;
+        logs.unshift(newLog);
+        if (welder) {
+          inspectionOverrides[newLog.idLog] = {...(inspectionOverrides[newLog.idLog] || {}), welder};
+          localStorage.setItem("tangguh_v2_inspection_overrides", JSON.stringify(inspectionOverrides));
+        }
+        saveLocalAll();
+
+        document.getElementById("fInspCatatan").value = "";
+        capturedPhotos.insp = "";
+        const prev = document.getElementById("inspPhotoPreview");
+        prev.src = ""; prev.style.display = "none";
+
+        alert(`Berhasil tersimpan ke Google Sheets. Kode Tag Fisik: ${tagBundel} (${unitsArr.length} unit)`);
+        onInspItemChange();
+        if (!isTechnicianRole()) renderInspectionTables();
+        renderSidebarNav();
+        if (typeof syncFromCloud === "function") syncFromCloud(true);
+      } catch (err) {
+        console.error("Gagal menyimpan inspeksi:", err);
+        alert(`Inspeksi belum tersimpan ke database. ${err.message || "Periksa koneksi, kemudian coba kembali."}\n\nFoto dan pilihan unit tetap dipertahankan agar Anda dapat mencoba lagi.`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText || "Simpan Hasil Inspeksi & Terbitkan Kode Tag Fisik";
       }
-
-      logs.unshift(newLog);
-      if (welder) {
-        inspectionOverrides[newLog.idLog] = {...(inspectionOverrides[newLog.idLog] || {}), welder};
-        localStorage.setItem("tangguh_v2_inspection_overrides", JSON.stringify(inspectionOverrides));
-      }
-      saveLocalAll();
-
-      document.getElementById("fInspCatatan").value = "";
-      capturedPhotos.insp = "";
-      const prev = document.getElementById("inspPhotoPreview");
-      prev.src = ""; prev.style.display = "none";
-
-      alert(`Tersimpan! Kode Tag Fisik: ${tagBundel} (${unitsArr.length} unit)`);
-      onInspItemChange();
-      if (!isTechnicianRole()) renderInspectionTables();
-      renderSidebarNav();
-
-      btn.disabled = false;
-      btn.textContent = "Simpan Hasil Inspeksi & Terbitkan Kode Tag Fisik";
     }
 
     function getActorAuditParts(value) {
@@ -4274,47 +4410,67 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const kondisi = document.getElementById("papuaKondisi").value;
       const cat = document.getElementById("papuaCatatan").value.trim();
       if (!tgl) { alert("Tanggal penerimaan wajib diisi."); return; }
-
-      const btn = document.getElementById("btnSubmitPapua");
-      btn.disabled = true; btn.textContent = "Menyimpan...";
-
-      const now = new Date();
-      const pad = n => String(n).padStart(2, "0");
-      const nowStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      if (!apiUrl || !apiUrl.startsWith("http")) {
+        alert("Koneksi Google Sheets tidak tersedia. Penerimaan belum disimpan.");
+        return;
+      }
 
       const idx = logs.findIndex(l => l.idLog === idLog);
-      if (idx > -1) {
-        logs[idx].statusTracking = "QC Incoming Papua";
-        logs[idx].tglTerimaPapua = tgl;
-        logs[idx].kondisiPapua = kondisi;
-        logs[idx].catatanPapua = cat;
-        logs[idx].papuaBy = `${currentUser.nama} (${nowStr})`;
+      if (idx < 0) {
+        alert("Data Kode Tag Fisik tidak ditemukan pada daftar lokal. Refresh data sebelum melanjutkan.");
+        return;
       }
 
-      if (apiUrl && apiUrl.startsWith("http")) {
-        try {
-          const res = await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({
-              sessionToken: currentSessionToken,
-              action: "submitPapuaIncoming",
-              idLog,
-              tglTerimaPapua: tgl,
-              kondisiPapua: kondisi,
-              catatanPapua: cat,
-              userName: currentUser.nama
-            })
-          });
-          await res.json();
-        } catch (e) { console.warn(e); }
-      }
+      const btn = document.getElementById("btnSubmitPapua");
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Menyimpan ke Database...";
 
-      saveLocalAll();
-      btn.disabled = false; btn.textContent = "Konfirmasi Penerimaan";
-      closeModal("papuaModal");
-      renderPapuaIncomingTracking();
-      renderShippingTracking();
+      try {
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            sessionToken: currentSessionToken,
+            action: "submitPapuaIncoming",
+            idLog,
+            tglTerimaPapua: tgl,
+            kondisiPapua: kondisi,
+            catatanPapua: cat,
+            userName: currentUser.nama
+          })
+        });
+        if (!res.ok) throw new Error(`Server merespons HTTP ${res.status}.`);
+        const data = await res.json();
+        if (!data || data.status !== "success") {
+          throw new Error(data && data.message ? data.message : "Server tidak mengonfirmasi penerimaan.");
+        }
+
+        logs[idx] = {
+          ...logs[idx],
+          statusTracking: "QC Incoming Papua",
+          tglTerimaPapua: tgl,
+          kondisiPapua: kondisi,
+          catatanPapua: cat,
+          papuaBy: `${currentUser.nama} (${new Date().toLocaleString("id-ID")})`
+        };
+        saveLocalAll();
+        closeModal("papuaModal");
+        renderPapuaIncomingTracking();
+        renderShippingTracking();
+        if (typeof syncFromCloud === "function") await syncFromCloud(true);
+        alert(`Penerimaan ${logs.find(l => l.idLog === idLog)?.tagBundel || "material"} berhasil dikonfirmasi di Google Sheets.`);
+        setTimeout(() => {
+          const scanInput = document.getElementById("papuaBarcodeInput");
+          if (scanInput) scanInput.focus();
+        }, 120);
+      } catch (err) {
+        console.error("Gagal menyimpan QC Incoming Papua:", err);
+        alert(`QC Incoming belum tersimpan ke database. ${err.message || "Periksa koneksi dan coba kembali."}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText || "Konfirmasi Penerimaan";
+      }
     }
 
     // ==================== IN-APP LIVE CAMERA & AUTO-WATERMARK ====================
