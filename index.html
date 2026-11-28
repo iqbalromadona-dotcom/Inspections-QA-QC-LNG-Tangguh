@@ -555,11 +555,9 @@
     .tag-registry-units { min-width:180px; max-width:320px; white-space:normal; overflow-wrap:anywhere; line-height:1.5; }
     .tag-registry-tools { display:flex; align-items:center; gap:12px; margin:12px 0 10px; flex-wrap:wrap; }
     .tag-registry-tools input { flex:1 1 320px; min-width:220px; }
-    .tag-registry-hint { color:var(--slate-500); font-size:0.74rem; }
-    .tag-registry-groups { display:flex; flex-wrap:wrap; gap:7px; margin:0 0 12px; }
-    .tag-registry-group-btn { border:1px solid var(--border); background:#fff; color:var(--slate-700); border-radius:8px; padding:7px 10px; font-size:0.76rem; font-weight:700; cursor:pointer; }
-    .tag-registry-group-btn span { display:inline-block; margin-left:5px; color:var(--slate-500); font-weight:600; }
-    .tag-registry-group-btn.active { background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; }
+    .tag-registry-hint { color:var(--slate-500); font-size:0.74rem; white-space:nowrap; }
+    .tag-registry-filter { display:flex; align-items:center; gap:8px; flex:0 1 330px; min-width:220px; }
+    .tag-registry-filter .form-control { flex:1 1 auto; min-width:0; }
     .tag-registry-list-heading { display:flex; justify-content:space-between; align-items:center; gap:10px; margin:4px 0 9px; color:var(--slate-700); font-size:0.8rem; }
     .tag-registry-list-heading span { color:var(--slate-500); font-weight:500; }
     .tag-registry-pagination { display:flex; justify-content:space-between; align-items:center; gap:10px; padding-top:12px; color:var(--slate-500); font-size:0.76rem; }
@@ -786,7 +784,7 @@
                       <th>Deskripsi Item</th>
                       <th class="text-center">Welder</th>
                       <th class="text-center">Metode Tagging</th>
-                      <th class="text-right">Qty Tag</th>
+                      <th class="text-right" title="Jumlah kode tag fisik yang sudah diregistrasi, bukan jumlah unit">Qty Tag Terdaftar</th>
                       <th class="text-right">Berat Satuan</th>
                       <th class="text-right">Target BOQ</th>
                       <th class="text-right">Total Berat BOQ</th>
@@ -978,9 +976,13 @@
               </div>
               <div class="tag-registry-tools">
                 <input type="search" id="tagRegistrySearch" class="form-control" placeholder="Cari kode tag, bangunan, item, atau nomor unit..." oninput="handleTagRegistrySearch()" autocomplete="off" />
-                <span class="tag-registry-hint">Pilih kelompok kode untuk melihat daftar tag di dalamnya.</span>
+                <div class="tag-registry-filter">
+                  <label class="tag-registry-hint" for="tagRegistryGroups">Kelompok Kode</label>
+                  <select id="tagRegistryGroups" class="form-control" onchange="selectTagRegistryGroup(this.value)" aria-label="Filter kelompok kode tag">
+                    <option value="">Semua Kelompok</option>
+                  </select>
+                </div>
               </div>
-              <div id="tagRegistryGroups" class="tag-registry-groups"></div>
               <div class="tag-registry-list-heading">
                 <strong id="tagRegistryGroupTitle">Semua Kelompok</strong>
                 <span id="tagRegistryResultCount">0 data</span>
@@ -2739,7 +2741,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           const methodHtml = methodBadges.length
             ? methodBadges.join(' ')
             : '<span style="color:var(--slate-400);">Belum terdaftar</span>';
-          const registeredQty = itemTagRegistrations.reduce((sum, tag) => sum + (Number(tag.qty) || 0), 0);
+          // Qty Tag menghitung jumlah kode tag yang diregistrasi, bukan jumlah unit di dalam tag.
+          const registeredQty = itemTagRegistrations.length;
 
           const bSatuan = Number(b.beratSatuan) || 0;
           const totalBeratItem = bSatuan * Number(b.target || 0);
@@ -3538,8 +3541,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       renderTagRegistry();
     }
 
-    function selectTagRegistryGroup(encodedGroup) {
-      selectedTagRegistryGroup = decodeURIComponent(encodedGroup || "");
+    function selectTagRegistryGroup(groupValue) {
+      selectedTagRegistryGroup = String(groupValue || "");
       tagRegistryPage = 1;
       renderTagRegistry();
     }
@@ -3578,11 +3581,12 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       });
       const groups = Object.keys(groupCounts).sort((a,b) => a.localeCompare(b, undefined, {numeric:true, sensitivity:"base"}));
       if (selectedTagRegistryGroup && !groups.includes(selectedTagRegistryGroup)) selectedTagRegistryGroup = "";
-      const groupWrap = document.getElementById("tagRegistryGroups");
-      groupWrap.innerHTML = [
-        `<button type="button" class="tag-registry-group-btn ${selectedTagRegistryGroup ? "" : "active"}" onclick="selectTagRegistryGroup('')">Semua Kelompok <span>${searched.length}</span></button>`,
-        ...groups.map(group => `<button type="button" class="tag-registry-group-btn ${selectedTagRegistryGroup === group ? "active" : ""}" onclick="selectTagRegistryGroup('${encodeURIComponent(group).replace(/'/g, "%27")}')">${escapeHtmlText(group)} <span>${groupCounts[group]}</span></button>`)
+      const groupSelect = document.getElementById("tagRegistryGroups");
+      groupSelect.innerHTML = [
+        `<option value="">Semua Kelompok (${searched.length})</option>`,
+        ...groups.map(group => `<option value="${escapeHtmlText(group)}">${escapeHtmlText(group)} (${groupCounts[group]})</option>`)
       ].join("");
+      groupSelect.value = selectedTagRegistryGroup;
 
       let filtered = selectedTagRegistryGroup
         ? searched.filter(tag => getTagRegistryGroup(tag.tagCode) === selectedTagRegistryGroup)
