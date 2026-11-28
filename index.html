@@ -763,6 +763,8 @@
                       <th>Bangunan</th>
                       <th>Kode Item</th>
                       <th>Deskripsi Item</th>
+                      <th class="text-center">Welder</th>
+                      <th style="min-width:180px; max-width:260px;">Catatan</th>
                       <th class="text-right">Berat Satuan</th>
                       <th class="text-right">Target BOQ</th>
                       <th class="text-right">Total Berat BOQ</th>
@@ -852,8 +854,6 @@
                       <th>Kode Item</th>
                       <th>Nama / Deskripsi Item</th>
                       <th>Dimensi</th>
-                      <th class="text-center">Welder?</th>
-                      <th style="min-width:260px;">Catatan</th>
                       <th class="text-right">Berat Satuan</th>
                       <th class="text-right">Target BOQ</th>
                       <th class="text-right">Total Berat BOQ</th>
@@ -2588,7 +2588,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const pageItems = filteredBoq.slice(startIdx, startIdx + PAGE_SIZE);
 
       document.getElementById("dashBoqBody").innerHTML = pageItems.length === 0
-        ? `<tr><td colspan="12" class="text-center" style="padding:18px; color:var(--slate-500);">Kode item "${qKode}" tidak ditemukan pada area ini.</td></tr>`
+        ? `<tr><td colspan="14" class="text-center" style="padding:18px; color:var(--slate-500);">Kode item "${qKode}" tidak ditemukan pada area ini.</td></tr>`
         : pageItems.map(b => {
           const iLogs = sLogs.filter(l => l.bangunan === b.bangunan && l.kodeItem === b.kodeItem);
           const details = getUnitProgressDetails(b.bangunan, b.kodeItem, b.target, sLogs);
@@ -2625,6 +2625,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
               <td><span class="pill ${b.bangunan === 'Office' ? 'pill-blue' : 'pill-purple'}">${b.bangunan}</span></td>
               <td><strong>${b.kodeItem}</strong></td>
               <td>${b.namaItem}</td>
+              <td class="text-center"><span class="pill ${b.prosesWelder === true ? 'pill-green' : 'pill-gray'}">${b.prosesWelder === true ? 'Ya' : 'Tidak'}</span></td>
+              <td style="min-width:180px; max-width:260px; white-space:normal; overflow-wrap:anywhere; word-break:break-word;">${escapeHtmlText(b.catatanStandar || "-")}</td>
               <td class="text-right">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "<span style='color:#94a3b8;'>0 kg</span>"}</td>
               <td class="text-right"><strong>${b.target}</strong> ${b.satuan}</td>
               <td class="text-right">${formatWeightHtml(totalBeratItem, "0 kg")}</td>
@@ -2652,7 +2654,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
         <tr>
           <td colspan="5" class="text-right">TOTAL ESTIMASI BERAT MATERIAL BOQ (APPROVED: ${formatWeightPlain(sumAppBerat)}):</td>
           <td class="text-right" style="color:var(--blue-dark);">${formatWeightHtml(sumTargetBerat, "0 kg")}</td>
-          <td colspan="6"></td>
+          <td colspan="8"></td>
         </tr>
       `;
 
@@ -2768,7 +2770,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const pageItems = sBoq.slice(startIdx, startIdx + PAGE_SIZE);
 
       document.getElementById("boqManageTableBody").innerHTML = pageItems.length === 0
-        ? `<tr><td colspan="11" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada item material BOQ pada area ini. Klik "+ Tambah Item Material".</td></tr>`
+        ? `<tr><td colspan="9" class="text-center" style="padding:18px; color:var(--slate-500);">Belum ada item material BOQ pada area ini. Klik "+ Tambah Item Material".</td></tr>`
         : pageItems.map((b, idx) => {
           const bSatuan = Number(b.beratSatuan) || 0;
           const totalBerat = bSatuan * Number(b.target || 0);
@@ -2781,8 +2783,6 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
                 <div style="font-weight:700; color:var(--navy);">${b.namaItem}</div>
               </td>
               <td>${b.dimensi || "-"}</td>
-              <td class="text-center"><span class="pill ${b.prosesWelder === true ? 'pill-green' : 'pill-gray'}">${b.prosesWelder === true ? 'Ya' : 'Tidak'}</span></td>
-              <td style="min-width:260px; max-width:360px; white-space:normal; overflow-wrap:anywhere;">${escapeHtmlText(b.catatanStandar || "-")}</td>
               <td class="text-right">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "<span style='color:#94a3b8;'>0 kg</span>"}</td>
               <td class="text-right"><strong>${b.target}</strong> ${b.satuan}</td>
               <td class="text-right">${formatWeightHtml(totalBerat, "0 kg")}</td>
@@ -2798,7 +2798,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
 
       document.getElementById("boqManageTableFoot").innerHTML = `
         <tr>
-          <td colspan="9" class="text-right">TOTAL BERAT KESELURUHAN ITEM BOQ (${activeBuilding}):</td>
+          <td colspan="7" class="text-right">TOTAL BERAT KESELURUHAN ITEM BOQ (${activeBuilding}):</td>
           <td class="text-right" style="color:var(--blue-dark);">${formatWeightHtml(grandTotalBerat, "0 kg")}</td>
           <td></td>
         </tr>
