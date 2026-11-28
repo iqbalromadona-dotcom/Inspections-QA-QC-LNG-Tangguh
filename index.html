@@ -553,7 +553,22 @@
     .tag-registry-table { min-width:860px; }
     .tag-registry-table td { vertical-align:top; }
     .tag-registry-units { min-width:180px; max-width:320px; white-space:normal; overflow-wrap:anywhere; line-height:1.5; }
-    @media (max-width:720px) { .tag-registry-preview { font-size:0.74rem; } }
+    .tag-registry-tools { display:flex; align-items:center; gap:12px; margin:12px 0 10px; flex-wrap:wrap; }
+    .tag-registry-tools input { flex:1 1 320px; min-width:220px; }
+    .tag-registry-hint { color:var(--slate-500); font-size:0.74rem; }
+    .tag-registry-groups { display:flex; flex-wrap:wrap; gap:7px; margin:0 0 12px; }
+    .tag-registry-group-btn { border:1px solid var(--border); background:#fff; color:var(--slate-700); border-radius:8px; padding:7px 10px; font-size:0.76rem; font-weight:700; cursor:pointer; }
+    .tag-registry-group-btn span { display:inline-block; margin-left:5px; color:var(--slate-500); font-weight:600; }
+    .tag-registry-group-btn.active { background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; }
+    .tag-registry-list-heading { display:flex; justify-content:space-between; align-items:center; gap:10px; margin:4px 0 9px; color:var(--slate-700); font-size:0.8rem; }
+    .tag-registry-list-heading span { color:var(--slate-500); font-weight:500; }
+    .tag-registry-pagination { display:flex; justify-content:space-between; align-items:center; gap:10px; padding-top:12px; color:var(--slate-500); font-size:0.76rem; }
+    .tag-registry-page-actions { display:flex; gap:7px; }
+    @media (max-width:720px) {
+      .tag-registry-preview { font-size:0.74rem; }
+      .tag-registry-list-heading { align-items:flex-start; flex-direction:column; }
+      .tag-registry-pagination { align-items:flex-start; flex-direction:column; }
+    }
 
     .welder-names-editor { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
     .welder-name-row { display:flex; align-items:flex-end; gap:6px; min-width:0; }
@@ -770,7 +785,8 @@
                       <th>Kode Item</th>
                       <th>Deskripsi Item</th>
                       <th class="text-center">Welder</th>
-                      <th style="min-width:180px; max-width:260px;">Catatan</th>
+                      <th class="text-center">Metode Tagging</th>
+                      <th class="text-right">Qty Tag</th>
                       <th class="text-right">Berat Satuan</th>
                       <th class="text-right">Target BOQ</th>
                       <th class="text-right">Total Berat BOQ</th>
@@ -905,7 +921,7 @@
             <div class="card">
               <div class="card-header">
                 <div>
-                  <div class="card-title">Registrasi Kode Tag Fisik</div>
+                  <div class="card-title" id="tagRegistryFormTitle">Registrasi Kode Tag Fisik</div>
                   <div class="card-sub">Daftarkan barcode yang sudah dicetak dan tentukan nomor unit yang diwakilinya. Registrasi baru disimpan pada tab Tag_Register; data BOQ dan log lama tidak diubah.</div>
                 </div>
                 <span class="pill pill-blue" id="tagRegistryCount">0 Tag Terdaftar</span>
@@ -946,6 +962,7 @@
                 <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
                   <button type="submit" class="btn btn-primary" id="btnSaveTagRegistration">Simpan Registrasi Tag</button>
                   <button type="button" class="btn btn-light" onclick="resetTagRegistrationForm()">Bersihkan Form</button>
+                  <button type="button" class="btn btn-light" id="btnCancelTagEdit" style="display:none;" onclick="resetTagRegistrationForm()">Batal Edit</button>
                 </div>
                 <div id="tagRegFeedback" style="font-size:0.76rem; color:var(--slate-600); margin-top:8px;"></div>
               </form>
@@ -958,6 +975,15 @@
                   <div class="card-sub">Setiap kode tag hanya boleh mewakili satu mapping unit. Tag yang sudah dipakai pada inspeksi tidak dapat dihapus dari registry.</div>
                 </div>
                 <button type="button" class="btn btn-light btn-sm" onclick="renderTagRegistry()">Refresh Daftar</button>
+              </div>
+              <div class="tag-registry-tools">
+                <input type="search" id="tagRegistrySearch" class="form-control" placeholder="Cari kode tag, bangunan, item, atau nomor unit..." oninput="handleTagRegistrySearch()" autocomplete="off" />
+                <span class="tag-registry-hint">Pilih kelompok kode untuk melihat daftar tag di dalamnya.</span>
+              </div>
+              <div id="tagRegistryGroups" class="tag-registry-groups"></div>
+              <div class="tag-registry-list-heading">
+                <strong id="tagRegistryGroupTitle">Semua Kelompok</strong>
+                <span id="tagRegistryResultCount">0 data</span>
               </div>
               <div class="table-wrap">
                 <table class="tag-registry-table">
@@ -976,6 +1002,13 @@
                   </thead>
                   <tbody id="tagRegistryTableBody"></tbody>
                 </table>
+              </div>
+              <div class="tag-registry-pagination">
+                <span id="tagRegistryPageInfo">Halaman 1 dari 1</span>
+                <div class="tag-registry-page-actions">
+                  <button type="button" class="btn btn-light btn-sm" id="btnTagRegistryPrev" onclick="changeTagRegistryPage(-1)" disabled>Prev</button>
+                  <button type="button" class="btn btn-light btn-sm" id="btnTagRegistryNext" onclick="changeTagRegistryPage(1)" disabled>Next</button>
+                </div>
               </div>
             </div>
           </section>
@@ -1706,6 +1739,9 @@
     let inspectionOverrides = JSON.parse(localStorage.getItem("tangguh_v2_inspection_overrides")) || {};
     // Tag registry adalah data cloud baru; tidak disimpan atau dimigrasikan ke localStorage.
     let tagRegistry = [];
+    let editingTagRegistrationCode = null;
+    let selectedTagRegistryGroup = "";
+    let tagRegistryPage = 1;
 
     // Pagination state (Max 10 per halaman)
     const PAGE_SIZE = 10;
@@ -2681,7 +2717,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       const pageItems = filteredBoq.slice(startIdx, startIdx + PAGE_SIZE);
 
       document.getElementById("dashBoqBody").innerHTML = pageItems.length === 0
-        ? `<tr><td colspan="14" class="text-center" style="padding:18px; color:var(--slate-500);">Kode item "${qKode}" tidak ditemukan pada area ini.</td></tr>`
+        ? `<tr><td colspan="15" class="text-center" style="padding:18px; color:var(--slate-500);">Kode item "${qKode}" tidak ditemukan pada area ini.</td></tr>`
         : pageItems.map(b => {
           const iLogs = sLogs.filter(l => l.bangunan === b.bangunan && l.kodeItem === b.kodeItem);
           const details = getUnitProgressDetails(b.bangunan, b.kodeItem, b.target, sLogs);
@@ -2691,6 +2727,19 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           const rwQty = details.rework.length;
           const papuaQty = details.papua.length;
           const sisa = details.belum.length + details.rework.length;
+
+          // Ringkasan metode dan jumlah unit dari Tag_Register untuk item BOQ ini.
+          const itemTagRegistrations = tagRegistry.filter(tag =>
+            tag.bangunan === b.bangunan && tag.kodeItem === b.kodeItem
+          );
+          const registeredMethods = new Set(itemTagRegistrations.map(tag => String(tag.tagType || "").toUpperCase()));
+          const methodBadges = [];
+          if (registeredMethods.has("BUNDLE")) methodBadges.push('<span class="pill pill-blue">Bundle</span>');
+          if (registeredMethods.has("SINGLE")) methodBadges.push('<span class="pill pill-green">Single Unit</span>');
+          const methodHtml = methodBadges.length
+            ? methodBadges.join(' ')
+            : '<span style="color:var(--slate-400);">Belum terdaftar</span>';
+          const registeredQty = itemTagRegistrations.reduce((sum, tag) => sum + (Number(tag.qty) || 0), 0);
 
           const bSatuan = Number(b.beratSatuan) || 0;
           const totalBeratItem = bSatuan * Number(b.target || 0);
@@ -2719,7 +2768,8 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
               <td><strong>${b.kodeItem}</strong></td>
               <td>${b.namaItem}</td>
               <td class="text-center"><span class="pill ${b.prosesWelder === true ? 'pill-green' : 'pill-gray'}">${b.prosesWelder === true ? 'Ya' : 'Tidak'}</span></td>
-              <td style="min-width:180px; max-width:260px; white-space:normal; overflow-wrap:anywhere; word-break:break-word;">${escapeHtmlText(b.catatanStandar || "-")}</td>
+              <td class="text-center" style="min-width:130px;">${methodHtml}</td>
+              <td class="text-right" style="font-weight:700;">${registeredQty.toLocaleString("id-ID")}</td>
               <td class="text-right">${bSatuan > 0 ? bSatuan.toLocaleString("id-ID") + " kg" : "<span style='color:#94a3b8;'>0 kg</span>"}</td>
               <td class="text-right"><strong>${b.target}</strong> ${b.satuan}</td>
               <td class="text-right">${formatWeightHtml(totalBeratItem, "0 kg")}</td>
@@ -2745,7 +2795,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
 
       document.getElementById("dashBoqFoot").innerHTML = `
         <tr>
-          <td colspan="5" class="text-right">TOTAL ESTIMASI BERAT MATERIAL BOQ (APPROVED: ${formatWeightPlain(sumAppBerat)}):</td>
+          <td colspan="6" class="text-right">TOTAL ESTIMASI BERAT MATERIAL BOQ (APPROVED: ${formatWeightPlain(sumAppBerat)}):</td>
           <td class="text-right" style="color:var(--blue-dark);">${formatWeightHtml(sumTargetBerat, "0 kg")}</td>
           <td colspan="8"></td>
         </tr>
@@ -3463,6 +3513,7 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
     }
 
     function resetTagRegistrationForm() {
+      editingTagRegistrationCode = null;
       const form = document.getElementById("tagRegistryForm");
       if (form) form.reset();
       const buildingSelect = document.getElementById("tagRegBuilding");
@@ -3470,7 +3521,34 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       if (activeBuilding !== "Gabungan" && buildingList.some(b => b.name === activeBuilding)) buildingSelect.value = activeBuilding;
       populateTagRegItems();
       document.getElementById("tagRegFeedback").textContent = "";
+      document.getElementById("tagRegistryFormTitle").textContent = "Registrasi Kode Tag Fisik";
+      document.getElementById("btnSaveTagRegistration").textContent = "Simpan Registrasi Tag";
+      document.getElementById("btnCancelTagEdit").style.display = "none";
       toggleTagRegistrationUnitFields();
+    }
+
+    function getTagRegistryGroup(tagCode) {
+      const code = normalizeBarcodeText(tagCode);
+      const match = code.match(/^(.+)-\d{1,6}$/);
+      return match ? match[1] : code;
+    }
+
+    function handleTagRegistrySearch() {
+      tagRegistryPage = 1;
+      renderTagRegistry();
+    }
+
+    function selectTagRegistryGroup(encodedGroup) {
+      selectedTagRegistryGroup = decodeURIComponent(encodedGroup || "");
+      tagRegistryPage = 1;
+      renderTagRegistry();
+    }
+
+    function changeTagRegistryPage(direction) {
+      const current = document.getElementById("tagRegistryPageInfo");
+      const maxPage = current ? Number(current.dataset.maxPage || 1) : 1;
+      tagRegistryPage = Math.min(maxPage, Math.max(1, tagRegistryPage + Number(direction || 0)));
+      renderTagRegistry();
     }
 
     function renderTagRegistry() {
@@ -3486,11 +3564,44 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
 
       const usedTags = new Set(logs.map(log => normalizeBarcodeText(log.tagBundel)));
       document.getElementById("tagRegistryCount").textContent = `${tagRegistry.length} Tag Terdaftar`;
+      const searchText = String(document.getElementById("tagRegistrySearch")?.value || "").trim().toLowerCase();
+      const searched = tagRegistry.filter(tag => {
+        if (!searchText) return true;
+        return [tag.tagCode, tag.bangunan, tag.kodeItem, tag.tagType, tag.unitList, tag.qty]
+          .some(value => String(value == null ? "" : value).toLowerCase().includes(searchText));
+      });
+
+      const groupCounts = {};
+      searched.forEach(tag => {
+        const group = getTagRegistryGroup(tag.tagCode);
+        groupCounts[group] = (groupCounts[group] || 0) + 1;
+      });
+      const groups = Object.keys(groupCounts).sort((a,b) => a.localeCompare(b, undefined, {numeric:true, sensitivity:"base"}));
+      if (selectedTagRegistryGroup && !groups.includes(selectedTagRegistryGroup)) selectedTagRegistryGroup = "";
+      const groupWrap = document.getElementById("tagRegistryGroups");
+      groupWrap.innerHTML = [
+        `<button type="button" class="tag-registry-group-btn ${selectedTagRegistryGroup ? "" : "active"}" onclick="selectTagRegistryGroup('')">Semua Kelompok <span>${searched.length}</span></button>`,
+        ...groups.map(group => `<button type="button" class="tag-registry-group-btn ${selectedTagRegistryGroup === group ? "active" : ""}" onclick="selectTagRegistryGroup('${encodeURIComponent(group).replace(/'/g, "%27")}')">${escapeHtmlText(group)} <span>${groupCounts[group]}</span></button>`)
+      ].join("");
+
+      let filtered = selectedTagRegistryGroup
+        ? searched.filter(tag => getTagRegistryGroup(tag.tagCode) === selectedTagRegistryGroup)
+        : searched;
+      filtered = filtered.slice().sort((a,b) => String(a.tagCode).localeCompare(String(b.tagCode), undefined, {numeric:true, sensitivity:"base"}));
+      const pageCount = Math.max(1, Math.ceil(filtered.length / 10));
+      tagRegistryPage = Math.min(pageCount, Math.max(1, tagRegistryPage));
+      const pageStart = (tagRegistryPage - 1) * 10;
+      const pageItems = filtered.slice(pageStart, pageStart + 10);
+      const heading = selectedTagRegistryGroup ? `Kelompok ${selectedTagRegistryGroup}` : "Semua Kelompok";
+      document.getElementById("tagRegistryGroupTitle").textContent = heading;
+      document.getElementById("tagRegistryResultCount").textContent = `${filtered.length} tag ditemukan`;
+
       const body = document.getElementById("tagRegistryTableBody");
-      body.innerHTML = tagRegistry.length ? tagRegistry.map((tag,index) => {
+      body.innerHTML = pageItems.length ? pageItems.map((tag,index) => {
         const used = usedTags.has(normalizeBarcodeText(tag.tagCode));
+        const encodedCode = encodeURIComponent(tag.tagCode).replace(/'/g, "%27");
         return `<tr>
-          <td>${index+1}</td>
+          <td>${pageStart + index + 1}</td>
           <td><strong>${escapeHtmlText(tag.tagCode)}</strong></td>
           <td>${escapeHtmlText(tag.bangunan)}</td>
           <td>${escapeHtmlText(tag.kodeItem)}</td>
@@ -3498,9 +3609,44 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
           <td class="tag-registry-units">${escapeHtmlText(tag.unitList)}</td>
           <td class="text-right"><strong>${Number(tag.qty)||0}</strong></td>
           <td><span class="pill ${used ? "pill-green" : "pill-blue"}">${used ? "Sudah dipakai" : "Belum dipakai"}</span></td>
-          <td class="text-center">${used ? `<span class="text-muted">Terkunci</span>` : `<button type="button" class="btn btn-danger btn-sm" onclick="deleteTagRegistration('${encodeURIComponent(tag.tagCode)}')">Hapus</button>`}</td>
+          <td class="text-center"><div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">${used
+            ? `<span class="text-muted" title="Tag sudah dipakai pada inspeksi; mapping dikunci">Terkunci</span>`
+            : `<button type="button" class="btn btn-light btn-sm" onclick="editTagRegistration('${encodedCode}')">Edit</button><button type="button" class="btn btn-danger btn-sm" onclick="deleteTagRegistration('${encodedCode}')">Hapus</button>`}</div></td>
         </tr>`;
-      }).join("") : `<tr><td colspan="9" class="text-center" style="padding:18px;color:var(--slate-500);">Belum ada Kode Tag Fisik yang didaftarkan.</td></tr>`;
+      }).join("") : `<tr><td colspan="9" class="text-center" style="padding:18px;color:var(--slate-500);">${tagRegistry.length ? "Tidak ada tag yang cocok dengan pencarian atau kelompok ini." : "Belum ada Kode Tag Fisik yang didaftarkan."}</td></tr>`;
+
+      const pageInfo = document.getElementById("tagRegistryPageInfo");
+      pageInfo.textContent = `Halaman ${tagRegistryPage} dari ${pageCount} • Menampilkan ${pageItems.length} dari ${filtered.length} tag`;
+      pageInfo.dataset.maxPage = String(pageCount);
+      document.getElementById("btnTagRegistryPrev").disabled = tagRegistryPage <= 1;
+      document.getElementById("btnTagRegistryNext").disabled = tagRegistryPage >= pageCount;
+    }
+
+    function editTagRegistration(encodedTagCode) {
+      const tagCode = decodeURIComponent(encodedTagCode || "");
+      const registration = tagRegistry.find(tag => tag.tagCode === tagCode);
+      if (!registration) return;
+      const used = logs.some(log => normalizeBarcodeText(log.tagBundel) === normalizeBarcodeText(tagCode));
+      if (used) {
+        alert("Tag sudah digunakan pada inspeksi. Mapping dikunci agar data historis tetap konsisten.");
+        return;
+      }
+      editingTagRegistrationCode = registration.tagCode;
+      const buildingSelect = document.getElementById("tagRegBuilding");
+      buildingSelect.value = registration.bangunan;
+      populateTagRegItems(registration.kodeItem);
+      document.getElementById("tagRegCode").value = registration.tagCode;
+      document.getElementById("tagRegType").value = registration.tagType;
+      const units = String(registration.unitList || "");
+      document.getElementById("tagRegSingleUnit").value = registration.tagType === "SINGLE" ? units : "";
+      document.getElementById("tagRegBundleUnits").value = registration.tagType === "BUNDLE" ? units : "";
+      document.getElementById("tagRegistryFormTitle").textContent = `Edit Registrasi Tag: ${registration.tagCode}`;
+      document.getElementById("btnSaveTagRegistration").textContent = "Simpan Perubahan";
+      document.getElementById("btnCancelTagEdit").style.display = "inline-flex";
+      document.getElementById("tagRegFeedback").textContent = "Mode edit aktif. Perubahan hanya dapat disimpan jika tag belum dipakai dan mapping unit tidak bertabrakan.";
+      toggleTagRegistrationUnitFields();
+      renderTagRegistrationPreview();
+      document.getElementById("tagRegistryForm").scrollIntoView({behavior:"smooth", block:"start"});
     }
 
     async function saveTagRegistration(event) {
@@ -3509,36 +3655,42 @@ Area akan dihapus dari daftar pilihan. Data BOQ (${linkedBoq} item) dan log insp
       if (!apiUrl || !currentSessionToken) { alert("Sesi database tidak tersedia. Login ulang sebelum mendaftarkan tag."); return; }
       const data = getTagRegistrationFormData(true);
       if (data.error) { alert(data.error); return; }
-      const existing = tagRegistry.find(tag => normalizeBarcodeText(tag.tagCode) === data.tagCode);
+      const existing = tagRegistry.find(tag => normalizeBarcodeText(tag.tagCode) === data.tagCode && tag.tagCode !== editingTagRegistrationCode);
       if (existing) { alert("Kode Tag Fisik sudah terdaftar. Gunakan kode yang berbeda."); return; }
-      const overlap = tagRegistry.find(tag => tag.bangunan === data.building && tag.kodeItem === data.kodeItem && String(tag.unitList || "").split(",").some(unit => data.units.includes(unit.trim())));
+      const overlap = tagRegistry.find(tag => tag.tagCode !== editingTagRegistrationCode && tag.bangunan === data.building && tag.kodeItem === data.kodeItem && String(tag.unitList || "").split(",").some(unit => data.units.includes(unit.trim())));
       if (overlap) { alert(`Nomor unit bertabrakan dengan registrasi ${overlap.tagCode}. Periksa mapping sebelum disimpan.`); return; }
       const btn = document.getElementById("btnSaveTagRegistration");
       const feedback = document.getElementById("tagRegFeedback");
-      btn.disabled = true; btn.textContent = "Menyimpan...";
-      feedback.textContent = "Memvalidasi kode dan nomor unit pada database...";
+      const isEdit = Boolean(editingTagRegistrationCode);
+      btn.disabled = true; btn.textContent = isEdit ? "Menyimpan Perubahan..." : "Menyimpan...";
+      feedback.textContent = isEdit ? "Memvalidasi perubahan mapping pada database..." : "Memvalidasi kode dan nomor unit pada database...";
       try {
         const response = await fetch(apiUrl, {
           method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
           body:JSON.stringify({
-            sessionToken:currentSessionToken, action:"registerTag", tagCode:data.tagCode,
-            bangunan:data.building, kodeItem:data.kodeItem, tagType:data.tagType,
-            unitList:data.unitList, userName:currentUser.nama
+            sessionToken:currentSessionToken, action:isEdit ? "updateTagRegistration" : "registerTag",
+            oldTagCode:isEdit ? editingTagRegistrationCode : undefined,
+            tagCode:data.tagCode, bangunan:data.building, kodeItem:data.kodeItem,
+            tagType:data.tagType, unitList:data.unitList, userName:currentUser.nama
           })
         });
         const result = await response.json();
-        if (!response.ok || result.status !== "success") throw new Error(result.message || "Registrasi gagal.");
-        feedback.textContent = `${data.tagCode} berhasil didaftarkan untuk ${data.qty} unit.`;
-        document.getElementById("tagRegCode").value = "";
-        document.getElementById("tagRegSingleUnit").value = "";
-        document.getElementById("tagRegBundleUnits").value = "";
+        if (!response.ok || result.status !== "success") throw new Error(result.message || (isEdit ? "Perubahan gagal disimpan." : "Registrasi gagal."));
+        const successMessage = isEdit
+          ? `${data.tagCode} berhasil diperbarui (${data.qty} unit).`
+          : `${data.tagCode} berhasil didaftarkan untuk ${data.qty} unit.`;
+        resetTagRegistrationForm();
+        tagRegistryPage = 1;
         await syncFromCloud(true);
         if (activeMenu === "tagRegistry") renderTagRegistry();
+        feedback.textContent = successMessage;
       } catch (error) {
-        feedback.textContent = "Registrasi gagal. Tidak ada perubahan pada data BOQ atau log inspeksi.";
-        alert("Gagal mendaftarkan Kode Tag Fisik.\n\n" + (error.message || String(error)));
+        feedback.textContent = isEdit ? "Perubahan gagal disimpan. Data BOQ dan log inspeksi tidak diubah." : "Registrasi gagal. Tidak ada perubahan pada data BOQ atau log inspeksi.";
+        alert((isEdit ? "Gagal memperbarui" : "Gagal mendaftarkan") + " Kode Tag Fisik.\n\n" + (error.message || String(error)));
       } finally {
-        btn.disabled = false; btn.textContent = "Simpan Registrasi Tag";
+        btn.disabled = false;
+        if (editingTagRegistrationCode) btn.textContent = "Simpan Perubahan";
+        else btn.textContent = "Simpan Registrasi Tag";
       }
     }
 
